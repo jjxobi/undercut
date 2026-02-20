@@ -1,8 +1,6 @@
-from pathlib import Path
 from types import SimpleNamespace
 
 import pandas as pd
-import pytest
 
 from modeling.ingest import fastf1_source
 
