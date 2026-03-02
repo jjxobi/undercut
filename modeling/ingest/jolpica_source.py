@@ -13,9 +13,9 @@ def _cache_path(key: str) -> Path:
     return CACHE_DIR / f"{key}.json"
 
 
-def _get_json(path: str, cache_key: str) -> dict:
+def _get_json(path: str, cache_key: str, refresh: bool = False) -> dict:
     cache_file = _cache_path(cache_key)
-    if cache_file.exists():
+    if cache_file.exists() and not refresh:
         return json.loads(cache_file.read_text())
 
     response = requests.get(f"{BASE_URL}/{path}", timeout=30)
@@ -27,13 +27,13 @@ def _get_json(path: str, cache_key: str) -> dict:
     return payload
 
 
-def season_schedule(season: int) -> list[dict]:
-    payload = _get_json(f"{season}.json", f"schedule_{season}")
+def season_schedule(season: int, refresh: bool = False) -> list[dict]:
+    payload = _get_json(f"{season}.json", f"schedule_{season}", refresh=refresh)
     return payload["MRData"]["RaceTable"]["Races"]
 
 
-def race_results(season: int, round_number: int) -> list[dict]:
+def race_results(season: int, round_number: int, refresh: bool = False) -> list[dict]:
     key = f"results_{season}_{round_number}"
-    payload = _get_json(f"{season}/{round_number}/results.json", key)
+    payload = _get_json(f"{season}/{round_number}/results.json", key, refresh=refresh)
     races = payload["MRData"]["RaceTable"]["Races"]
     return races[0]["Results"] if races else []

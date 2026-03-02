@@ -17,9 +17,11 @@ RESULTS = [
 
 def _patch_pipeline(monkeypatch):
     monkeypatch.setattr(build_dataset.fastf1_source, "enable_cache", lambda: None)
-    monkeypatch.setattr(build_dataset.jolpica_source, "season_schedule", lambda season: SCHEDULE)
     monkeypatch.setattr(
-        build_dataset.jolpica_source, "race_results", lambda season, rnd: RESULTS
+        build_dataset.jolpica_source, "season_schedule", lambda season, refresh=False: SCHEDULE
+    )
+    monkeypatch.setattr(
+        build_dataset.jolpica_source, "race_results", lambda season, rnd, refresh=False: RESULTS
     )
     fake_session = SimpleNamespace()
     monkeypatch.setattr(

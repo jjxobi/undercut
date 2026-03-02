@@ -11,14 +11,14 @@ from modeling.ingest import fastf1_source, jolpica_source
 PROCESSED_DIR = Path("data/processed")
 
 
-def build(seasons: list[int]) -> dict[str, pd.DataFrame]:
+def build(seasons: list[int], refresh: bool = False) -> dict[str, pd.DataFrame]:
     fastf1_source.enable_cache()
 
     laps_parts, status_parts, weather_parts = [], [], []
     stint_parts, pit_parts, schedule_parts, results_parts = [], [], [], []
 
     for season in seasons:
-        races = jolpica_source.season_schedule(season)
+        races = jolpica_source.season_schedule(season, refresh=refresh)
         for race in races:
             round_number = int(race["round"])
             schedule_parts.append(
@@ -31,7 +31,7 @@ def build(seasons: list[int]) -> dict[str, pd.DataFrame]:
                 }
             )
 
-            for result in jolpica_source.race_results(season, round_number):
+            for result in jolpica_source.race_results(season, round_number, refresh=refresh):
                 position = result["position"]
                 results_parts.append(
                     {
@@ -82,9 +82,14 @@ def main() -> None:
     )
     parser.add_argument("--seasons", type=int, nargs="*", default=config.SEASONS)
     parser.add_argument("--out", type=Path, default=PROCESSED_DIR)
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="bypass the Jolpica-F1 cache and re-fetch schedule/results from the network",
+    )
     args = parser.parse_args()
 
-    tables = build(args.seasons)
+    tables = build(args.seasons, refresh=args.refresh)
     write_tables(tables, args.out)
 
 

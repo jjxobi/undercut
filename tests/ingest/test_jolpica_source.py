@@ -81,6 +81,40 @@ def test_season_schedule_uses_cache_without_network_call(tmp_path, monkeypatch):
     assert races[0]["raceName"] == "Bahrain Grand Prix"
 
 
+def test_season_schedule_refresh_bypasses_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(jolpica_source, "CACHE_DIR", tmp_path)
+    (tmp_path / "schedule_2023.json").write_text(json.dumps(SCHEDULE_PAYLOAD))
+    calls = []
+
+    def fake_get(url, timeout):
+        calls.append(url)
+        return _FakeResponse(SCHEDULE_PAYLOAD)
+
+    monkeypatch.setattr(jolpica_source.requests, "get", fake_get)
+
+    races = jolpica_source.season_schedule(2023, refresh=True)
+
+    assert races[0]["raceName"] == "Bahrain Grand Prix"
+    assert calls == ["https://api.jolpi.ca/ergast/f1/2023.json"]
+
+
+def test_race_results_refresh_bypasses_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(jolpica_source, "CACHE_DIR", tmp_path)
+    (tmp_path / "results_2023_1.json").write_text(json.dumps(RESULTS_PAYLOAD))
+    calls = []
+
+    def fake_get(url, timeout):
+        calls.append(url)
+        return _FakeResponse(RESULTS_PAYLOAD)
+
+    monkeypatch.setattr(jolpica_source.requests, "get", fake_get)
+
+    results = jolpica_source.race_results(2023, 1, refresh=True)
+
+    assert results[0]["Driver"]["driverId"] == "max_verstappen"
+    assert calls == ["https://api.jolpi.ca/ergast/f1/2023/1/results.json"]
+
+
 def test_race_results_returns_results_list(tmp_path, monkeypatch):
     monkeypatch.setattr(jolpica_source, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(
