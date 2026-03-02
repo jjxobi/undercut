@@ -68,6 +68,41 @@ def test_build_returns_all_expected_tables(monkeypatch):
     assert tables["results"].iloc[0]["Position"] == 1
 
 
+TWO_ROUND_SCHEDULE = [
+    {"round": "1", "raceName": "Bahrain Grand Prix", "date": "2023-03-05",
+     "Circuit": {"circuitId": "bahrain"}},
+    {"round": "2", "raceName": "Saudi Arabian Grand Prix", "date": "2023-03-19",
+     "Circuit": {"circuitId": "jeddah"}},
+]
+
+
+def test_build_skips_failed_session_but_keeps_schedule_and_results(monkeypatch, capsys):
+    _patch_pipeline(monkeypatch)
+    monkeypatch.setattr(
+        build_dataset.jolpica_source, "season_schedule",
+        lambda season, refresh=False: TWO_ROUND_SCHEDULE,
+    )
+
+    def failing_load_race_session(season, round_number):
+        if round_number == 2:
+            raise RuntimeError("session data unavailable")
+        return SimpleNamespace()
+
+    monkeypatch.setattr(
+        build_dataset.fastf1_source, "load_race_session", failing_load_race_session
+    )
+
+    tables = build_dataset.build([2023])
+
+    assert set(tables["schedule"]["Round"]) == {1, 2}
+    assert set(tables["results"]["Round"]) == {1, 2}
+    for name in ("laps", "track_status", "weather", "stints", "pit_stops"):
+        assert 2 not in set(tables[name].get("Round", []))
+
+    captured = capsys.readouterr()
+    assert "skip 2023 round 2" in captured.out
+
+
 def test_write_tables_writes_parquet_files(tmp_path, monkeypatch):
     _patch_pipeline(monkeypatch)
     tables = build_dataset.build([2023])

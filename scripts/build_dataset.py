@@ -46,7 +46,8 @@ def build(seasons: list[int], refresh: bool = False) -> dict[str, pd.DataFrame]:
 
             try:
                 session = fastf1_source.load_race_session(season, round_number)
-            except Exception:  # noqa: BLE001, S112 - one bad session must not abort the run
+            except Exception as exc:  # noqa: BLE001 - one bad session must not abort the run
+                print(f"skip {season} round {round_number}: {exc}")
                 continue
 
             laps = fastf1_source.laps_frame(session, season, round_number)
