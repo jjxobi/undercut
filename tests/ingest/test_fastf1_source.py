@@ -103,6 +103,9 @@ def test_stints_frame_groups_by_driver_and_stint():
 
 
 def test_pit_stops_frame_keeps_only_rows_with_pit_in_time():
+    # In real FastF1 data, PitInTime lands on the lap that pits in, while
+    # PitOutTime lands on the following lap (the out-lap), never both on
+    # the same row.
     laps = pd.DataFrame(
         {
             "Season": [2023, 2023],
@@ -111,7 +114,7 @@ def test_pit_stops_frame_keeps_only_rows_with_pit_in_time():
             "LapNumber": [10, 11],
             "Stint": [1, 2],
             "PitInTime": [pd.Timedelta(seconds=100), pd.NaT],
-            "PitOutTime": [pd.Timedelta(seconds=120), pd.NaT],
+            "PitOutTime": [pd.NaT, pd.Timedelta(seconds=120)],
         }
     )
 
@@ -119,3 +122,5 @@ def test_pit_stops_frame_keeps_only_rows_with_pit_in_time():
 
     assert len(result) == 1
     assert result.iloc[0]["LapNumber"] == 10
+    assert result.iloc[0]["PitInTime"] == pd.Timedelta(seconds=100)
+    assert result.iloc[0]["PitOutTime"] == pd.Timedelta(seconds=120)

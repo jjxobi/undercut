@@ -55,6 +55,9 @@ def stints_frame(laps: pd.DataFrame) -> pd.DataFrame:
 
 
 def pit_stops_frame(laps: pd.DataFrame) -> pd.DataFrame:
+    laps = laps.sort_values(["Season", "Round", "Driver", "LapNumber"]).copy()
+    group_key = ["Season", "Round", "Driver"]
+    laps["PitOutTime"] = laps.groupby(group_key)["PitOutTime"].shift(-1)
     stops = laps.loc[
         laps["PitInTime"].notna(),
         ["Season", "Round", "Driver", "LapNumber", "Stint", "PitInTime", "PitOutTime"],
