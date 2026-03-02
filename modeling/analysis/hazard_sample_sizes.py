@@ -31,17 +31,32 @@ def count_events(status: pd.DataFrame) -> pd.DataFrame:
 
 
 def sample_sizes_by_circuit(events: pd.DataFrame, schedule: pd.DataFrame) -> pd.DataFrame:
-    merged = events.merge(schedule[["Season", "Round", "CircuitId"]], on=["Season", "Round"], how="left")
-    merged["RegulationEra"] = merged["Season"].apply(config.regulation_era)
-    summary = (
-        merged.groupby("CircuitId")
-        .agg(TotalEvents=("EventCount", "sum"), RaceCount=("Round", "count"))
+    schedule = schedule.copy()
+    schedule["RegulationEra"] = schedule["Season"].apply(config.regulation_era)
+
+    race_counts = (
+        schedule.groupby(["CircuitId", "RegulationEra"])
+        .agg(RaceCount=("Round", "count"))
         .reset_index()
-        .sort_values("TotalEvents")
     )
-    era_by_circuit = merged.sort_values("Season").groupby("CircuitId")["RegulationEra"].last()
-    summary["RegulationEra"] = summary["CircuitId"].map(era_by_circuit)
+
+    event_totals = events.merge(
+        schedule[["Season", "Round", "CircuitId", "RegulationEra"]],
+        on=["Season", "Round"],
+        how="left",
+    )
+    event_totals = (
+        event_totals.groupby(["CircuitId", "RegulationEra"])
+        .agg(TotalEvents=("EventCount", "sum"))
+        .reset_index()
+    )
+
+    summary = race_counts.merge(
+        event_totals, on=["CircuitId", "RegulationEra"], how="left"
+    )
+    summary["TotalEvents"] = summary["TotalEvents"].fillna(0).astype(int)
     summary["CredibleForIndividualModel"] = summary["TotalEvents"] >= 5
+    summary = summary.sort_values(["CircuitId", "RegulationEra"]).reset_index(drop=True)
     return summary
 
 
