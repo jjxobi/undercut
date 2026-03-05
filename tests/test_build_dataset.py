@@ -103,6 +103,45 @@ def test_build_skips_failed_session_but_keeps_schedule_and_results(monkeypatch, 
     assert "skip 2023 round 2" in captured.out
 
 
+def test_build_skips_race_when_laps_frame_fails_after_session_loads(monkeypatch, capsys):
+    _patch_pipeline(monkeypatch)
+    monkeypatch.setattr(
+        build_dataset.jolpica_source, "season_schedule",
+        lambda season, refresh=False: TWO_ROUND_SCHEDULE,
+    )
+
+    # load_race_session succeeds for every race and never raises - this
+    # reproduces FastF1 sessions that load "successfully" but leave internal
+    # data unset, so the real failure only surfaces later when a downstream
+    # frame accessor touches the session.
+    monkeypatch.setattr(
+        build_dataset.fastf1_source, "load_race_session",
+        lambda season, round_number: SimpleNamespace(),
+    )
+
+    def failing_laps_frame(session, season, round_number):
+        if round_number == 2:
+            raise RuntimeError("The data you are trying to access has not been loaded yet")
+        return pd.DataFrame({"Season": [2023], "Round": [1], "Driver": ["VER"], "Stint": [1],
+                              "Compound": ["MEDIUM"], "LapNumber": [1],
+                              "PitInTime": [pd.NaT], "PitOutTime": [pd.NaT]})
+
+    monkeypatch.setattr(build_dataset.fastf1_source, "laps_frame", failing_laps_frame)
+
+    tables = build_dataset.build([2023])
+
+    assert set(tables["schedule"]["Round"]) == {1, 2}
+    assert set(tables["results"]["Round"]) == {1, 2}
+    for name in ("laps", "track_status", "weather", "stints", "pit_stops"):
+        assert 2 not in set(tables[name].get("Round", []))
+    # laps for the untouched round 1 race must still be present - the fix
+    # isolates the failure per-race rather than aborting the whole run.
+    assert set(tables["laps"]["Round"]) == {1}
+
+    captured = capsys.readouterr()
+    assert "skip 2023 round 2" in captured.out
+
+
 def test_write_tables_writes_parquet_files(tmp_path, monkeypatch):
     _patch_pipeline(monkeypatch)
     tables = build_dataset.build([2023])

@@ -46,16 +46,20 @@ def build(seasons: list[int], refresh: bool = False) -> dict[str, pd.DataFrame]:
 
             try:
                 session = fastf1_source.load_race_session(season, round_number)
+                laps = fastf1_source.laps_frame(session, season, round_number)
+                status = fastf1_source.track_status_frame(session, season, round_number)
+                weather = fastf1_source.weather_frame(session, season, round_number)
+                stints = fastf1_source.stints_frame(laps)
+                pit_stops = fastf1_source.pit_stops_frame(laps)
             except Exception as exc:  # noqa: BLE001 - one bad session must not abort the run
                 print(f"skip {season} round {round_number}: {exc}")
                 continue
 
-            laps = fastf1_source.laps_frame(session, season, round_number)
             laps_parts.append(laps)
-            status_parts.append(fastf1_source.track_status_frame(session, season, round_number))
-            weather_parts.append(fastf1_source.weather_frame(session, season, round_number))
-            stint_parts.append(fastf1_source.stints_frame(laps))
-            pit_parts.append(fastf1_source.pit_stops_frame(laps))
+            status_parts.append(status)
+            weather_parts.append(weather)
+            stint_parts.append(stints)
+            pit_parts.append(pit_stops)
 
     def _concat(parts: list[pd.DataFrame]) -> pd.DataFrame:
         return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
