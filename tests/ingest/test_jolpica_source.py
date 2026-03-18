@@ -1,14 +1,22 @@
 import json
 
+import pytest
+import requests
+
 from modeling.ingest import jolpica_source
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200, headers=None):
         self._payload = payload
+        self.status_code = status_code
+        self.headers = headers or {}
 
     def raise_for_status(self):
-        pass
+        if self.status_code >= 400:
+            raise requests.exceptions.HTTPError(
+                f"{self.status_code} Client Error", response=self
+            )
 
     def json(self):
         return self._payload
@@ -136,3 +144,47 @@ def test_race_results_returns_empty_list_when_no_races(tmp_path, monkeypatch):
     results = jolpica_source.race_results(2023, 99)
 
     assert results == []
+
+
+def test_get_json_retries_on_429_then_succeeds(tmp_path, monkeypatch):
+    monkeypatch.setattr(jolpica_source, "CACHE_DIR", tmp_path)
+    calls = []
+    sleeps = []
+
+    responses = [
+        _FakeResponse({}, status_code=429, headers={"Retry-After": "1"}),
+        _FakeResponse(SCHEDULE_PAYLOAD, status_code=200),
+    ]
+
+    def fake_get(url, timeout):
+        calls.append(url)
+        return responses[len(calls) - 1]
+
+    monkeypatch.setattr(jolpica_source.requests, "get", fake_get)
+    monkeypatch.setattr(jolpica_source.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+    payload = jolpica_source._get_json("2023.json", "schedule_2023")
+
+    assert payload == SCHEDULE_PAYLOAD
+    assert len(calls) == 2
+    assert len(sleeps) == 1
+
+
+def test_get_json_exhausts_retries_and_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr(jolpica_source, "CACHE_DIR", tmp_path)
+    calls = []
+    sleeps = []
+
+    def fake_get(url, timeout):
+        calls.append(url)
+        return _FakeResponse({}, status_code=429, headers={"Retry-After": "1"})
+
+    monkeypatch.setattr(jolpica_source.requests, "get", fake_get)
+    monkeypatch.setattr(jolpica_source.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+    max_retries = 5
+    with pytest.raises(requests.exceptions.HTTPError):
+        jolpica_source._get_json("2023.json", "schedule_2023")
+
+    assert len(calls) == max_retries + 1
+    assert len(sleeps) == max_retries
