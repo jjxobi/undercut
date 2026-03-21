@@ -1,141 +1,260 @@
 import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 
 from modeling.degradation import model
 
+DRIVERS = ["VER", "HAM", "LEC"]
 
-def _synthetic_frame(
-    compound: str = "MEDIUM", tyre_life_coef: float = 0.08, era: str = "2022-2025 ground-effect"
-) -> pd.DataFrame:
-    # True generative model, expressed directly in already-fuel-corrected terms
-    # (as features.build_training_frame's CorrectedLapTimeSeconds would produce):
-    # 90s base + tyre_life_coef s/lap tyre degradation (linear) + 0.002 s/lap^2
-    # (mild quadratic) + 0.02 s/degree track temp + a 2s driver offset for one
-    # driver. No RaceLapNumber/fuel term is needed here since the a-priori
-    # fuel correction is assumed to already have removed it from
-    # CorrectedLapTimeSeconds -- that's the whole point of correcting before
-    # fitting instead of estimating the fuel effect as a free regressor.
-    # bahrain gets enough races to be "credible" on its own. monaco and imola
-    # each stay individually sparse (well under the 300-lap credibility bar),
-    # but combined they clear the pooling threshold, so together they produce
-    # a single pooled fit rather than being dropped for lack of data.
-    rng = np.random.default_rng(42)
+
+def _generate_circuit_laps(
+    circuit_id: str,
+    true_slope: float,
+    n_races: int,
+    noise_sd: float,
+    rng: np.random.Generator,
+    max_tyre_life: int = 20,
+    compound: str = "MEDIUM",
+    era: str = "2022-2025 ground-effect",
+    squared_coef: float = 0.002,
+) -> list[dict]:
+    # Generative model, already expressed in fuel-corrected terms (as
+    # features.build_training_frame's CorrectedLapTimeSeconds would produce):
+    # 90s base + true_slope s/lap tyre degradation (linear, the per-circuit
+    # "true" rate a hierarchical fit should partially recover) + a fixed
+    # population-level quadratic term + track temp + a driver offset.
     rows = []
-    drivers = ["VER", "HAM", "LEC"]
-    for circuit, n_races in [("bahrain", 40), ("monaco", 3), ("imola", 3)]:
-        for race in range(n_races):
-            for driver in drivers:
-                base_temp = 30 + rng.normal(0, 2)
-                for lap in range(1, 21):
-                    tyre_life = lap
-                    temp = base_temp + rng.normal(0, 0.5)
-                    noise = rng.normal(0, 0.15)
-                    corrected = (
-                        90
-                        + tyre_life_coef * tyre_life
-                        + 0.002 * tyre_life**2
-                        + 0.02 * temp
-                        + (2.0 if driver == "HAM" else 0.0)
-                        + noise
-                    )
-                    rows.append(
-                        {
-                            "Compound": compound,
-                            "CircuitId": circuit,
-                            "Driver": driver,
-                            "TyreLife": tyre_life,
-                            "TyreLifeSquared": tyre_life**2,
-                            "TrackTemp": temp,
-                            "CorrectedLapTimeSeconds": corrected,
-                            "RegulationEra": era,
-                        }
-                    )
-    return pd.DataFrame(rows)
+    for race in range(n_races):
+        for driver in DRIVERS:
+            base_temp = 30 + rng.normal(0, 2)
+            for lap in range(1, max_tyre_life + 1):
+                temp = base_temp + rng.normal(0, 0.5)
+                noise = rng.normal(0, noise_sd)
+                corrected = (
+                    90
+                    + true_slope * lap
+                    + squared_coef * lap**2
+                    + 0.02 * temp
+                    + (2.0 if driver == "HAM" else 0.0)
+                    + noise
+                )
+                rows.append(
+                    {
+                        "Compound": compound,
+                        "CircuitId": circuit_id,
+                        "Driver": driver,
+                        "TyreLife": float(lap),
+                        "TyreLifeSquared": float(lap**2),
+                        "TrackTemp": temp,
+                        "CorrectedLapTimeSeconds": corrected,
+                        "RegulationEra": era,
+                    }
+                )
+    return rows
 
 
-def test_fit_degradation_models_recovers_true_coefficient_for_credible_circuit():
-    frame = _synthetic_frame()
+def test_fit_degradation_models_recovers_population_coefficient_with_partial_pooling():
+    # 5 circuits, true per-circuit slopes clustered tightly around a
+    # population value of 0.08 (small per-circuit deviations) -- enough
+    # circuits and enough laps per circuit for mixedlm to estimate a
+    # meaningful random-slope variance component and converge reliably.
+    rng = np.random.default_rng(7)
+    population_true_slope = 0.08
+    deviations = rng.normal(0, 0.01, size=5)
+    rows = []
+    for i, deviation in enumerate(deviations):
+        rows += _generate_circuit_laps(f"circuit_{i}", population_true_slope + deviation, 8, 0.15, rng)
+    frame = pd.DataFrame(rows)
 
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
 
-    bahrain_row = results[(results.scope == "circuit") & (results.circuit_id == "bahrain")].iloc[0]
-    assert abs(bahrain_row["tyre_life_coef"] - 0.08) < 0.02
-    assert bahrain_row["r_squared"] > 0.8
-    assert bahrain_row["tyre_life_pvalue"] < 0.01
-    assert bahrain_row["compound"] == "MEDIUM"
-    assert bahrain_row["era"] == "2022-2025 ground-effect"
-
-
-def test_fit_degradation_models_pools_sparse_circuit():
-    frame = _synthetic_frame()
-
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
-
-    pooled_rows = results[results.scope == "pooled"]
+    pooled_rows = results[results["scope"] == "pooled"]
     assert len(pooled_rows) == 1
-    assert pooled_rows.iloc[0]["circuit_id"] is None
-    circuit_rows = results[results.scope == "circuit"]
-    assert list(circuit_rows["circuit_id"]) == ["bahrain"]
+    assert abs(pooled_rows.iloc[0]["tyre_life_coef"] - population_true_slope) < 0.03
+
+    circuit_rows = results[results["scope"] == "circuit"]
+    assert set(circuit_rows["circuit_id"]) == {f"circuit_{i}" for i in range(5)}
+    assert circuit_rows["shrinkage_source"].isin(["circuit_estimate", "population_fallback"]).all()
+    assert circuit_rows["shrinkage_source"].notna().all()
 
 
-def test_fit_degradation_models_handles_multiple_compounds_independently():
-    # SOFT's true tyre-age slope (0.12) is deliberately different from MEDIUM's
-    # (0.08) rather than merely offset by a constant, so an implementation that
-    # accidentally pools/entangles the two compounds (e.g. fits once on the
-    # concatenated frame and stamps both labels onto the same result rows)
-    # would recover a single slope for both and fail the assertions below.
-    medium = _synthetic_frame(compound="MEDIUM", tyre_life_coef=0.08)
-    soft = _synthetic_frame(compound="SOFT", tyre_life_coef=0.12)
-    frame = pd.concat([medium, soft], ignore_index=True)
-
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
-
-    assert set(results["compound"]) == {"MEDIUM", "SOFT"}
-    assert len(results) == 4  # 2 compounds x (1 circuit-credible + 1 pooled) each
-
-    medium_bahrain = results[
-        (results.compound == "MEDIUM") & (results.scope == "circuit") & (results.circuit_id == "bahrain")
-    ].iloc[0]
-    soft_bahrain = results[
-        (results.compound == "SOFT") & (results.scope == "circuit") & (results.circuit_id == "bahrain")
-    ].iloc[0]
-
-    assert abs(medium_bahrain["tyre_life_coef"] - soft_bahrain["tyre_life_coef"]) > 0.02
-    assert medium_bahrain["n_obs"] == 2400
-    assert soft_bahrain["n_obs"] == 2400
-
-
-def test_fit_degradation_models_skips_pooled_fit_below_credibility_threshold():
-    # Many circuits, one lap each: nowhere near enough total data to trust a
-    # pooled fit, even though each individual circuit is far too sparse to
-    # get its own circuit-specific model. Without a minimum-observation guard,
-    # statsmodels will still "succeed" on this rank-deficient design via a
-    # pseudo-inverse and return a perfect-looking but meaningless fit.
+def test_fit_degradation_models_shrinks_sparse_circuit_toward_population():
+    # 6 well-behaved circuits (480 laps each, full tyre-life range 1-20,
+    # true slope near the population value of 0.08) alongside one
+    # deliberately sparse, noisy circuit: only 3 short races (max tyre life
+    # 5, well under the others' 20) with much higher noise and a true slope
+    # (0.30) far from the population. The restricted tyre-life range and
+    # elevated noise make that circuit's own-data estimate genuinely
+    # unreliable, which is exactly when partial pooling should pull the
+    # fitted value toward the population mean.
+    #
+    # To prove shrinkage happened (not just that the model ran), compare
+    # the hierarchical fit's circuit-level estimate against what a plain,
+    # unpooled OLS regression on that circuit's data alone would say -- the
+    # unpooled estimate is this fixture's noisy, small-sample truth, and the
+    # hierarchical estimate should land measurably closer to the population
+    # value than that unpooled estimate does.
+    rng = np.random.default_rng(24)
     rows = []
-    for i in range(30):
-        rows.append(
-            {
-                "Compound": "WET",
-                "CircuitId": f"circuit_{i}",
-                "Driver": "VER",
-                "TyreLife": 1,
-                "TyreLifeSquared": 1,
-                "TrackTemp": 25.0,
-                "CorrectedLapTimeSeconds": 100.0 + i,
-                "RegulationEra": "2022-2025 ground-effect",
-            }
+    for i in range(6):
+        rows += _generate_circuit_laps(f"circuit_{i}", 0.08, 8, 0.15, rng)
+    sparse_rows = _generate_circuit_laps(
+        "sparse_circuit", 0.30, 3, 0.6, rng, max_tyre_life=5
+    )
+    rows += sparse_rows
+    frame = pd.DataFrame(rows)
+
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
+
+    population_coef = results[results["scope"] == "pooled"].iloc[0]["tyre_life_coef"]
+    sparse_row = results[results["circuit_id"] == "sparse_circuit"].iloc[0]
+    hierarchical_coef = sparse_row["tyre_life_coef"]
+
+    sparse_frame = pd.DataFrame(sparse_rows)
+    unpooled_fit = smf.ols(
+        "CorrectedLapTimeSeconds ~ TyreLife + TyreLifeSquared + TrackTemp + C(Driver)", data=sparse_frame
+    ).fit()
+    unpooled_coef = unpooled_fit.params["TyreLife"]
+
+    assert abs(hierarchical_coef - population_coef) < abs(unpooled_coef - population_coef)
+
+
+def test_fit_degradation_models_falls_back_to_population_when_circuit_estimate_implausible():
+    # One circuit with a strongly negative true slope (-0.15) and plenty of
+    # low-noise data (as much as the well-behaved circuits get) -- enough
+    # data that the hierarchical fit doesn't fully shrink its estimate away
+    # from that negative slope, so its effective per-circuit curve goes
+    # negative within the plausibility horizon even after shrinkage.
+    rng = np.random.default_rng(1)
+    rows = _generate_circuit_laps("problem_circuit", -0.15, 8, 0.15, rng)
+    for i in range(5):
+        rows += _generate_circuit_laps(f"circuit_{i}", 0.08, 8, 0.15, rng)
+    frame = pd.DataFrame(rows)
+
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
+
+    pooled_row = results[results["scope"] == "pooled"].iloc[0]
+    problem_row = results[results["circuit_id"] == "problem_circuit"].iloc[0]
+
+    assert problem_row["shrinkage_source"] == "population_fallback"
+    assert problem_row["tyre_life_coef"] == pooled_row["tyre_life_coef"]
+
+    horizon = model._plausibility_horizon(frame["TyreLife"])
+    assert model._is_plausible(
+        problem_row["tyre_life_coef"], problem_row["tyre_life_squared_coef"], horizon
+    )
+
+
+def test_fit_degradation_models_skips_group_with_too_few_circuits():
+    # Two circuits, plenty of laps each (well past the total-lap floor) --
+    # but a hierarchical fit needs enough distinct circuits to estimate a
+    # meaningful random-effects variance component, and 2 is below the
+    # minimum of 3. The group should be skipped entirely: zero rows, not an
+    # error and not a degenerate fit.
+    rows = []
+    for circuit in ["bahrain", "monza"]:
+        for i in range(300):
+            tyre_life = float((i % 20) + 1)
+            rows.append(
+                {
+                    "Compound": "MEDIUM",
+                    "CircuitId": circuit,
+                    "Driver": "VER",
+                    "TyreLife": tyre_life,
+                    "TyreLifeSquared": tyre_life**2,
+                    "TrackTemp": 30.0,
+                    "CorrectedLapTimeSeconds": 90.0 + 0.08 * tyre_life,
+                    "RegulationEra": "2022-2025 ground-effect",
+                }
+            )
+    frame = pd.DataFrame(rows)
+
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
+
+    assert len(results) == 0
+
+
+def test_fit_degradation_models_skips_group_with_too_few_laps():
+    # Four circuits (enough circuits), but only 20 laps apiece -- well
+    # under the 500-lap floor for the whole group. Should also skip
+    # cleanly rather than attempting an underpowered hierarchical fit.
+    rows = []
+    for circuit in ["bahrain", "monza", "imola", "spa"]:
+        for i in range(20):
+            tyre_life = float((i % 20) + 1)
+            rows.append(
+                {
+                    "Compound": "MEDIUM",
+                    "CircuitId": circuit,
+                    "Driver": "VER",
+                    "TyreLife": tyre_life,
+                    "TyreLifeSquared": tyre_life**2,
+                    "TrackTemp": 30.0,
+                    "CorrectedLapTimeSeconds": 90.0 + 0.08 * tyre_life,
+                    "RegulationEra": "2022-2025 ground-effect",
+                }
+            )
+    frame = pd.DataFrame(rows)
+
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
+
+    assert len(results) == 0
+
+
+def test_fit_degradation_models_stratifies_by_regulation_era():
+    # Same compound and same four circuits (including a shared "bahrain")
+    # across two eras with different population-level true slopes. Each
+    # era/compound group should get its own pooled fit, and the shared
+    # circuit should get two separate circuit-level rows -- one per era --
+    # each landing near that era's population value, never conflated across
+    # the regulation change.
+    rng = np.random.default_rng(3)
+    era_a_specs = [("bahrain", 0.06), ("monza", 0.058), ("imola", 0.062), ("spa", 0.059)]
+    era_b_specs = [("bahrain", 0.10), ("monza", 0.098), ("imola", 0.102), ("spa", 0.099)]
+
+    rows = []
+    for circuit_id, true_slope in era_a_specs:
+        rows += _generate_circuit_laps(circuit_id, true_slope, 8, 0.15, rng, era="2018-2021 aero")
+    for circuit_id, true_slope in era_b_specs:
+        rows += _generate_circuit_laps(
+            circuit_id, true_slope, 8, 0.15, rng, era="2022-2025 ground-effect"
         )
     frame = pd.DataFrame(rows)
 
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
 
-    assert len(results[results["compound"] == "WET"]) == 0
+    assert set(results["era"]) == {"2018-2021 aero", "2022-2025 ground-effect"}
+
+    pooled_a = results[(results["era"] == "2018-2021 aero") & (results["scope"] == "pooled")].iloc[0]
+    pooled_b = results[
+        (results["era"] == "2022-2025 ground-effect") & (results["scope"] == "pooled")
+    ].iloc[0]
+    assert abs(pooled_a["tyre_life_coef"] - 0.06) < 0.03
+    assert abs(pooled_b["tyre_life_coef"] - 0.10) < 0.03
+
+    bahrain_rows = results[results["circuit_id"] == "bahrain"]
+    assert len(bahrain_rows) == 2
+    assert set(bahrain_rows["era"]) == {"2018-2021 aero", "2022-2025 ground-effect"}
+    bahrain_a = bahrain_rows[bahrain_rows["era"] == "2018-2021 aero"].iloc[0]
+    bahrain_b = bahrain_rows[bahrain_rows["era"] == "2022-2025 ground-effect"].iloc[0]
+    assert bahrain_a["tyre_life_coef"] < bahrain_b["tyre_life_coef"]
 
 
 def test_fit_degradation_models_returns_typed_empty_frame_when_nothing_qualifies():
-    frame = _synthetic_frame()
+    frame = pd.DataFrame(
+        columns=[
+            "TyreLife",
+            "TyreLifeSquared",
+            "TrackTemp",
+            "CorrectedLapTimeSeconds",
+            "CircuitId",
+            "Compound",
+            "RegulationEra",
+            "Driver",
+        ]
+    )
 
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=1_000_000)
+    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
 
     assert len(results) == 0
     assert list(results.columns) == [
@@ -148,85 +267,5 @@ def test_fit_degradation_models_returns_typed_empty_frame_when_nothing_qualifies
         "tyre_life_coef",
         "tyre_life_squared_coef",
         "tyre_life_pvalue",
+        "shrinkage_source",
     ]
-
-
-def test_fit_degradation_models_rejects_implausible_circuit_fit_and_falls_back_to_pooled():
-    # bahrain: enough laps to be circuit-credible, but constructed with a
-    # NEGATIVE true tyre-age slope (tyres get faster -- physically impossible).
-    # imola: also enough laps, with a normal POSITIVE true slope, so it earns
-    # its own circuit-specific row and is NOT part of the pooled fallback.
-    # monza: deliberately kept below the circuit-credibility bar (well under
-    # 300 laps) with a strong POSITIVE true slope, so it's automatically a
-    # pooling candidate from the start. Combined with bahrain's rejected
-    # (implausible) data, the pooled fit's slope is a weighted average that
-    # lands positive -- proving the rejected circuit fit still contributes to
-    # a plausible pooled fallback rather than just vanishing, and that an
-    # implausible circuit-level result never reaches the output on its own.
-    rng = np.random.default_rng(11)
-    rows = []
-    for circuit, true_coef, n_races, drivers in [
-        ("bahrain", -0.05, 20, ["VER", "HAM"]),
-        ("imola", 0.08, 20, ["VER", "HAM"]),
-        ("monza", 0.6, 4, ["VER", "HAM"]),
-    ]:
-        for race in range(n_races):
-            for driver in drivers:
-                for lap in range(1, 21):
-                    corrected = 90 + true_coef * lap + 0.001 * lap**2 + rng.normal(0, 0.1)
-                    rows.append(
-                        {
-                            "Compound": "MEDIUM",
-                            "CircuitId": circuit,
-                            "Driver": driver,
-                            "TyreLife": float(lap),
-                            "TyreLifeSquared": float(lap**2),
-                            "TrackTemp": 30.0,
-                            "CorrectedLapTimeSeconds": corrected,
-                            "RegulationEra": "2022-2025 ground-effect",
-                        }
-                    )
-    frame = pd.DataFrame(rows)
-
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
-
-    # bahrain's implausible circuit-level fit must not appear
-    assert not ((results["scope"] == "circuit") & (results["circuit_id"] == "bahrain")).any()
-    # monza never had enough laps for its own circuit-level fit either
-    assert not ((results["scope"] == "circuit") & (results["circuit_id"] == "monza")).any()
-    # imola's plausible circuit-level fit should still appear on its own
-    imola_row = results[(results["scope"] == "circuit") & (results["circuit_id"] == "imola")]
-    assert len(imola_row) == 1
-    assert imola_row.iloc[0]["tyre_life_coef"] > 0
-    # a pooled fallback should exist, combining bahrain's rejected laps with monza's sparse leftovers
-    pooled_rows = results[results["scope"] == "pooled"]
-    assert len(pooled_rows) == 1
-    assert pooled_rows.iloc[0]["tyre_life_coef"] > 0
-
-
-def test_fit_degradation_models_stratifies_by_regulation_era():
-    rng = np.random.default_rng(13)
-    rows = []
-    for era in ["2018-2021 aero", "2022-2025 ground-effect"]:
-        for race in range(40):
-            for driver in ["VER", "HAM", "LEC"]:
-                for lap in range(1, 21):
-                    corrected = 90 + 0.08 * lap + 0.001 * lap**2 + rng.normal(0, 0.15)
-                    rows.append(
-                        {
-                            "Compound": "MEDIUM",
-                            "CircuitId": "bahrain",
-                            "Driver": driver,
-                            "TyreLife": float(lap),
-                            "TyreLifeSquared": float(lap**2),
-                            "TrackTemp": 30.0,
-                            "CorrectedLapTimeSeconds": corrected,
-                            "RegulationEra": era,
-                        }
-                    )
-    frame = pd.DataFrame(rows)
-
-    results = model.fit_degradation_models(frame, min_laps_for_circuit_model=300)
-
-    assert set(results["era"]) == {"2018-2021 aero", "2022-2025 ground-effect"}
-    assert len(results[results["circuit_id"] == "bahrain"]) == 2  # one row per era, not pooled across eras

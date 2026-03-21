@@ -38,7 +38,7 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     coefficients.to_csv(out_path, index=False)
     print(f"fit {len(coefficients)} degradation models -> {out_path}")
-    print(coefficients[["compound", "scope", "circuit_id", "n_obs", "r_squared", "tyre_life_coef"]].to_string())
+    print(coefficients[["era", "compound", "scope", "circuit_id", "n_obs", "r_squared", "tyre_life_coef"]].to_string())
 
 
 if __name__ == "__main__":

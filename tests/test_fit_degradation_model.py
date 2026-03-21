@@ -46,15 +46,28 @@ def _synthetic_processed_dir(tmp_path):
     # give each synthetic "race" its own Round so accurate_laps + grouping behave like real data
     laps["Round"] = (laps.index // (2 * 15)) + 1
 
+    # Spread rounds across 3 circuits (not just one) -- the hierarchical fit
+    # needs several distinct circuits to estimate a random-effects variance
+    # component at all; a single-circuit fixture can no longer produce any
+    # output under this fitting method.
+    circuit_ids = ["bahrain", "jeddah", "melbourne"]
     schedule = pd.DataFrame(
-        {"Season": [2023] * 30, "Round": range(1, 31), "CircuitId": ["bahrain"] * 30}
+        {
+            "Season": [2023] * 30,
+            "Round": range(1, 31),
+            "CircuitId": [circuit_ids[r % 3] for r in range(30)],
+        }
     )
+    # TrackTemp varies race to race (not a constant) -- a constant covariate is
+    # perfectly collinear with the intercept once every circuit's data shares
+    # the exact same value, which makes the hierarchical fit's design matrix
+    # singular.
     weather = pd.DataFrame(
         {
             "Season": [2023] * 30,
             "Round": range(1, 31),
             "Time": [pd.Timedelta(minutes=r * 90) for r in range(30)],
-            "TrackTemp": [32.0] * 30,
+            "TrackTemp": [32.0 + rng.normal(0, 2) for _ in range(30)],
             "AirTemp": [24.0] * 30,
             "Rainfall": [False] * 30,
         }
