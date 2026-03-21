@@ -1,5 +1,6 @@
 import pandas as pd
 
+from modeling import config
 from modeling.degradation import features
 
 
@@ -47,6 +48,29 @@ def test_add_weather_attaches_nearest_reading_within_race():
     assert result.iloc[1]["TrackTemp"] == 36.0
 
 
+def test_add_weather_handles_race_with_no_weather_rows():
+    laps = pd.DataFrame(
+        {
+            "Season": [2023, 2023],
+            "Round": [2, 2],
+            "Driver": ["VER", "VER"],
+            "LapNumber": [1, 2],
+            "TyreLife": [1, 2],
+            "Time": [pd.Timedelta(minutes=1), pd.Timedelta(minutes=2)],
+            "LapTime": [pd.Timedelta(seconds=90.0), pd.Timedelta(seconds=90.5)],
+        }
+    )
+    # weather fixture only has rows for Round 1 -- Round 2 has zero matching weather rows
+    weather = _weather()
+
+    result = features.add_weather(laps, weather)
+
+    assert len(result) == 2
+    assert result["TrackTemp"].isna().all()
+    assert result["AirTemp"].isna().all()
+    assert result["Rainfall"].isna().all()
+
+
 def test_build_training_frame_computes_engineered_columns():
     result = features.build_training_frame(_laps(), _schedule(), _weather())
 
@@ -57,3 +81,8 @@ def test_build_training_frame_computes_engineered_columns():
     assert result.iloc[0]["RaceLapNumber"] == 5
     assert result.iloc[1]["LapTimeSeconds"] == 91.8
     assert result.iloc[1]["TyreLifeSquared"] == 36
+
+    assert result.iloc[0]["CorrectedLapTimeSeconds"] == 91.5 + 0.07 * 5
+    assert result.iloc[1]["CorrectedLapTimeSeconds"] == 91.8 + 0.07 * 6
+    assert result.iloc[0]["RegulationEra"] == config.regulation_era(2023)
+    assert result.iloc[0]["RegulationEra"] == "2022-2025 ground-effect"

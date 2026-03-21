@@ -6,6 +6,7 @@ __pycache__/
 .ruff_cache/
 data/raw/
 data/processed/
+data/*.log
 .env
 node_modules/
 dist/

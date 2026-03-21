@@ -37,6 +37,7 @@ def _synthetic_processed_dir(tmp_path):
                             "Time": pd.Timedelta(minutes=race * 90 + race_lap),
                             "LapTime": pd.Timedelta(seconds=lap_time),
                             "IsAccurate": is_accurate,
+                            "TrackStatus": "1",
                             "PitInTime": pd.NaT,
                             "PitOutTime": pd.NaT,
                         }
