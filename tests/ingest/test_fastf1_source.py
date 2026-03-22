@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pandas as pd
+import pytest
 
 from modeling.ingest import fastf1_source
 
@@ -46,6 +47,55 @@ def test_load_race_session_calls_get_session_and_load(monkeypatch):
     assert fake_session.load_calls == [
         {"laps": True, "weather": True, "telemetry": False, "messages": False}
     ]
+
+
+def test_load_race_session_retries_on_rate_limit_then_succeeds(monkeypatch):
+    fake_session = _FakeSession(pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
+    calls = []
+    sleep_calls = []
+
+    def fake_get_session(season, round_number, identifier):
+        calls.append((season, round_number, identifier))
+        if len(calls) < 3:
+            raise fastf1_source.RateLimitExceededError("any API: 500 calls/h")
+        return fake_session
+
+    monkeypatch.setattr(fastf1_source.fastf1, "get_session", fake_get_session)
+    monkeypatch.setattr(fastf1_source.time, "sleep", lambda s: sleep_calls.append(s))
+
+    result = fastf1_source.load_race_session(2023, 5)
+
+    assert result is fake_session
+    assert len(calls) == 3
+    assert sleep_calls == [fastf1_source.RATE_LIMIT_BACKOFF_SECONDS] * 2
+
+
+def test_load_race_session_raises_after_max_retries(monkeypatch):
+    def fake_get_session(season, round_number, identifier):
+        raise fastf1_source.RateLimitExceededError("any API: 500 calls/h")
+
+    monkeypatch.setattr(fastf1_source.fastf1, "get_session", fake_get_session)
+    sleep_calls = []
+    monkeypatch.setattr(fastf1_source.time, "sleep", lambda s: sleep_calls.append(s))
+
+    with pytest.raises(fastf1_source.RateLimitExceededError):
+        fastf1_source.load_race_session(2023, 5)
+
+    assert len(sleep_calls) == fastf1_source.MAX_RATE_LIMIT_RETRIES - 1
+
+
+def test_load_race_session_does_not_retry_on_other_exceptions(monkeypatch):
+    def fake_get_session(season, round_number, identifier):
+        raise ValueError("some other failure")
+
+    monkeypatch.setattr(fastf1_source.fastf1, "get_session", fake_get_session)
+    sleep_calls = []
+    monkeypatch.setattr(fastf1_source.time, "sleep", lambda s: sleep_calls.append(s))
+
+    with pytest.raises(ValueError, match="some other failure"):
+        fastf1_source.load_race_session(2023, 5)
+
+    assert sleep_calls == []
 
 
 def test_laps_frame_adds_season_and_round():

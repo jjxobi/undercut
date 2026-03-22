@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import fastf1
 import pandas as pd
+from fastf1.exceptions import RateLimitExceededError
 
 CACHE_DIR = Path("data/raw/fastf1_cache")
+RATE_LIMIT_BACKOFF_SECONDS = 65 * 60
+MAX_RATE_LIMIT_RETRIES = 3
 
 
 def enable_cache(cache_dir: Path = CACHE_DIR) -> None:
@@ -14,9 +18,17 @@ def enable_cache(cache_dir: Path = CACHE_DIR) -> None:
 
 
 def load_race_session(season: int, round_number: int):
-    session = fastf1.get_session(season, round_number, "R")
-    session.load(laps=True, weather=True, telemetry=False, messages=False)
-    return session
+    attempt = 0
+    while True:
+        try:
+            session = fastf1.get_session(season, round_number, "R")
+            session.load(laps=True, weather=True, telemetry=False, messages=False)
+            return session
+        except RateLimitExceededError:
+            attempt += 1
+            if attempt >= MAX_RATE_LIMIT_RETRIES:
+                raise
+            time.sleep(RATE_LIMIT_BACKOFF_SECONDS)
 
 
 def laps_frame(session, season: int, round_number: int) -> pd.DataFrame:
