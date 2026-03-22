@@ -6,9 +6,14 @@ _BASELINE_TYRE_LIFE = 1
 
 
 def degradation_seconds(tyre_life: float, tyre_life_coef: float, tyre_life_squared_coef: float) -> float:
+    if tyre_life_squared_coef < 0:
+        vertex = -tyre_life_coef / (2 * tyre_life_squared_coef)
+        effective_tyre_life = min(tyre_life, max(vertex, _BASELINE_TYRE_LIFE))
+    else:
+        effective_tyre_life = tyre_life
     baseline = tyre_life_coef * _BASELINE_TYRE_LIFE + tyre_life_squared_coef * _BASELINE_TYRE_LIFE**2
-    at_tyre_life = tyre_life_coef * tyre_life + tyre_life_squared_coef * tyre_life**2
-    return at_tyre_life - baseline
+    at_tyre_life = tyre_life_coef * effective_tyre_life + tyre_life_squared_coef * effective_tyre_life**2
+    return max(0.0, at_tyre_life - baseline)
 
 
 def lookup_coefficients(coefficients: pd.DataFrame, compound: str, circuit_id: str, era: str) -> pd.Series:

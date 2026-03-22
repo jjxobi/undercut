@@ -99,8 +99,6 @@ def test_fit_degradation_models_recovers_population_coefficient_with_partial_poo
 
     circuit_rows = results[results["scope"] == "circuit"]
     assert set(circuit_rows["circuit_id"]) == {f"circuit_{i}" for i in range(5)}
-    assert circuit_rows["shrinkage_source"].isin(["circuit_estimate", "population_fallback"]).all()
-    assert circuit_rows["shrinkage_source"].notna().all()
 
 
 def test_fit_degradation_models_shrinks_sparse_circuit_toward_population():
@@ -144,12 +142,17 @@ def test_fit_degradation_models_shrinks_sparse_circuit_toward_population():
     assert abs(hierarchical_coef - population_coef) < abs(unpooled_coef - population_coef)
 
 
-def test_fit_degradation_models_falls_back_to_population_when_circuit_estimate_implausible():
+def test_fit_degradation_models_keeps_extreme_circuit_estimate_without_rejecting_it():
     # One circuit with a strongly negative true slope (-0.15) and plenty of
     # low-noise data (as much as the well-behaved circuits get) -- enough
     # data that the hierarchical fit doesn't fully shrink its estimate away
-    # from that negative slope, so its effective per-circuit curve goes
-    # negative within the plausibility horizon even after shrinkage.
+    # from that negative slope, so its shrunk coefficient stays unusual
+    # (likely still negative or close to it). model.py no longer rejects or
+    # replaces this: it has no plausibility gate at all any more -- it's
+    # predict.degradation_seconds's job to make any stored coefficient safe
+    # to query, not fit_degradation_models's job to filter what gets stored.
+    # This asserts the circuit still gets its own row, with its own (not the
+    # population's) coefficient, proving nothing is being silently rejected.
     rng = np.random.default_rng(1)
     rows = _generate_circuit_laps("problem_circuit", -0.15, 8, 0.15, rng)
     for i in range(5):
@@ -159,15 +162,15 @@ def test_fit_degradation_models_falls_back_to_population_when_circuit_estimate_i
     results = model.fit_degradation_models(frame, min_laps_for_circuit_model=500)
 
     pooled_row = results[results["scope"] == "pooled"].iloc[0]
-    problem_row = results[results["circuit_id"] == "problem_circuit"].iloc[0]
+    problem_row = results[results["circuit_id"] == "problem_circuit"]
 
-    assert problem_row["shrinkage_source"] == "population_fallback"
-    assert problem_row["tyre_life_coef"] == pooled_row["tyre_life_coef"]
-
-    horizon = model._plausibility_horizon(frame["TyreLife"])
-    assert model._is_plausible(
-        problem_row["tyre_life_coef"], problem_row["tyre_life_squared_coef"], horizon
-    )
+    assert len(problem_row) == 1
+    problem_row = problem_row.iloc[0]
+    # its own shrunk estimate is stored, not silently swapped for the population's
+    assert problem_row["tyre_life_coef"] != pooled_row["tyre_life_coef"]
+    # and it's still meaningfully different (extreme relative to the other circuits),
+    # confirming this wasn't fully shrunk away either
+    assert problem_row["tyre_life_coef"] < pooled_row["tyre_life_coef"] - 0.05
 
 
 def test_fit_degradation_models_skips_group_with_too_few_circuits():
@@ -292,5 +295,4 @@ def test_fit_degradation_models_returns_typed_empty_frame_when_nothing_qualifies
         "tyre_life_coef",
         "tyre_life_squared_coef",
         "tyre_life_pvalue",
-        "shrinkage_source",
     ]
