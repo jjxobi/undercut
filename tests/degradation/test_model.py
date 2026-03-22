@@ -53,6 +53,31 @@ def _generate_circuit_laps(
     return rows
 
 
+class _FakeMixedFit:
+    """Minimal stand-in exposing just the attributes _is_internally_consistent reads."""
+
+    def __init__(self, tau: float, blup_values: list[float]):
+        self.cov_re = pd.DataFrame([[tau**2]], index=["TyreLife"], columns=["TyreLife"])
+        self.random_effects = {
+            f"circuit_{i}": {"TyreLife": value} for i, value in enumerate(blup_values)
+        }
+
+
+def test_is_internally_consistent_rejects_mismatched_tau_and_accepts_matching_tau():
+    # Numbers mirror a real mismatch found on 2018-2021 HARD: lbfgs reported an
+    # internal tau of 1.757 while the actual fitted circuit deviations (BLUPs)
+    # had a std of only 0.129 -- a >13x mismatch signaling a bad local optimum,
+    # even though the solver self-reported convergence. cg/powell landed on a
+    # better optimum with tau=0.132, matching the BLUP spread almost exactly.
+    blup_values = [0.129, -0.129]  # std == 0.129, matching the real BLUP spread
+
+    bad_optimum = _FakeMixedFit(tau=1.757, blup_values=blup_values)
+    assert not model._is_internally_consistent(bad_optimum)
+
+    good_optimum = _FakeMixedFit(tau=0.132, blup_values=blup_values)
+    assert model._is_internally_consistent(good_optimum)
+
+
 def test_fit_degradation_models_recovers_population_coefficient_with_partial_pooling():
     # 5 circuits, true per-circuit slopes clustered tightly around a
     # population value of 0.08 (small per-circuit deviations) -- enough
