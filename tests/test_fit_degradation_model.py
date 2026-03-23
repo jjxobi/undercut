@@ -25,7 +25,12 @@ def _synthetic_processed_dir(tmp_path):
     for race in range(30):
         for driver in DRIVERS:
             race_lap = 0
-            for stint_length in (7, 8):
+            # stint_number tracks which of the two stint-length loops we're in
+            # directly, rather than comparing tyre_life to stint_length (which
+            # is always true within tyre_life's own range and previously made
+            # every lap's Stint come out 1 -- a no-op that gave StintKey zero
+            # real variation).
+            for stint_number, stint_length in enumerate((7, 8), start=1):
                 for tyre_life in range(1, stint_length + 1):
                     race_lap += 1
                     is_accurate = tyre_life != 1  # fresh-tyre out-lap flagged inaccurate
@@ -42,7 +47,7 @@ def _synthetic_processed_dir(tmp_path):
                             "Round": 1,
                             "Driver": driver,
                             "LapNumber": race_lap,
-                            "Stint": 1 if tyre_life <= stint_length else 2,
+                            "Stint": stint_number,
                             "Compound": "MEDIUM",
                             "TyreLife": float(tyre_life),
                             "Time": pd.Timedelta(minutes=race * 90 + race_lap),
@@ -91,6 +96,21 @@ def _synthetic_processed_dir(tmp_path):
     schedule.to_parquet(tmp_path / "schedule.parquet", index=False)
     weather.to_parquet(tmp_path / "weather.parquet", index=False)
     return tmp_path
+
+
+def test_synthetic_fixture_actually_has_two_distinct_stints_per_driver_race(tmp_path):
+    # Guards against the fixture silently degrading back into a no-op: the
+    # whole point of two stints per driver-race is to give the stint-level
+    # variance component (features.add_stint_key's StintKey) more than one
+    # value to distinguish, per driver-race. Without this, the fixture
+    # provides zero real coverage of that mechanism while still "looking"
+    # correct at a glance.
+    processed_dir = _synthetic_processed_dir(tmp_path)
+    laps = pd.read_parquet(processed_dir / "laps.parquet")
+
+    assert set(laps["Stint"].unique()) == {1, 2}
+    stint_keys_per_driver_race = laps.groupby(["Season", "Round", "Driver"])["Stint"].nunique()
+    assert (stint_keys_per_driver_race == 2).all()
 
 
 def test_run_produces_coefficients_from_processed_parquet(tmp_path):
