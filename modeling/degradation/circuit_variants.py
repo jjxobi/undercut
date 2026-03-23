@@ -7,7 +7,7 @@ MIN_DRIVERS_FOR_SIGNATURE = 8
 LAP_TIME_THRESHOLD = 1.07
 SECTOR_SUM_TOLERANCE_SECONDS = 0.5
 MIN_VARIANT_THRESHOLD = 0.05
-NULL_DISTANCE_QUANTILE = 0.995
+MAD_MULTIPLIER = 8.0
 
 SECTOR_TIME_COLUMNS = ["Sector1Time", "Sector2Time", "Sector3Time"]
 SECTOR_FRACTION_COLUMNS = ["Sector1Frac", "Sector2Frac", "Sector3Frac"]
@@ -53,10 +53,14 @@ def compute_race_signatures(laps: pd.DataFrame) -> pd.DataFrame:
 
 
 def _null_distance_threshold(signatures: pd.DataFrame) -> float:
-    """Self-calibrating threshold: a high quantile of the pooled within-circuit
-    same-layout distance distribution. Nearly all within-circuit race pairs are
-    same-layout, so this distribution estimates "no change" directly from the
-    data and re-calibrates automatically as more seasons arrive.
+    """Self-calibrating threshold: median + MAD_MULTIPLIER * MAD of the pooled
+    within-circuit distance distribution. A percentile-based threshold is fragile
+    here because the pool itself contains the rare true layout-change distances
+    it's trying to detect -- with only a few hundred pairs, the top 0.5% *is*
+    those outliers, so a high quantile ends up estimating the signal rather than
+    the "no change" baseline. Median and MAD have a much higher breakdown point:
+    a handful of true outliers among hundreds of same-layout pairs barely moves
+    either, since both are driven by the bulk of the distribution, not its tail.
     """
     distances = []
     for _circuit_id, group in signatures.groupby(level="CircuitId"):
@@ -66,7 +70,12 @@ def _null_distance_threshold(signatures: pd.DataFrame) -> float:
                 distances.append(float(np.max(np.abs(values[i] - values[j]))))
     if not distances:
         return MIN_VARIANT_THRESHOLD
-    return max(MIN_VARIANT_THRESHOLD, float(np.quantile(distances, NULL_DISTANCE_QUANTILE)))
+
+    distances_array = np.array(distances)
+    median = float(np.median(distances_array))
+    mad = float(np.median(np.abs(distances_array - median)))
+    robust_threshold = median + MAD_MULTIPLIER * mad
+    return max(MIN_VARIANT_THRESHOLD, robust_threshold)
 
 
 def detect_variants(signatures: pd.DataFrame, threshold: float | None = None) -> pd.Series:
