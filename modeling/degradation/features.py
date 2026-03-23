@@ -45,3 +45,21 @@ def build_training_frame(laps: pd.DataFrame, schedule: pd.DataFrame, weather: pd
     frame["CorrectedLapTimeSeconds"] = frame["LapTimeSeconds"] + FUEL_S_PER_LAP * frame["RaceLapNumber"]
     frame["RegulationEra"] = frame["Season"].apply(config.regulation_era)
     return frame
+
+
+def add_stint_key(frame: pd.DataFrame) -> pd.DataFrame:
+    frame = frame.copy()
+    frame["StintKey"] = (
+        frame["Season"].astype(str)
+        + "_" + frame["Round"].astype(str)
+        + "_" + frame["Driver"].astype(str)
+        + "_" + frame["Stint"].astype(str)
+    )
+    return frame
+
+
+def add_variant(frame: pd.DataFrame, variant_map: pd.Series) -> pd.DataFrame:
+    frame = frame.copy()
+    keys = list(zip(frame["Season"], frame["Round"], frame["CircuitId"]))
+    frame["Variant"] = pd.Series(keys, index=frame.index).map(variant_map)
+    return frame

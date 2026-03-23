@@ -27,6 +27,12 @@ def _generate_circuit_laps(
     for race in range(n_races):
         for driver in DRIVERS:
             base_temp = 30 + rng.normal(0, 2)
+            # one continuous stint per race/driver in these fixtures -- unique
+            # enough that the stint-level variance component in model.py has
+            # something real to key off of, without needing to model actual
+            # in-race stint splits (that's what tests/test_fit_degradation_model.py's
+            # two-stint fixture is for).
+            stint_key = f"{era}_{circuit_id}_{race}_{driver}"
             for lap in range(1, max_tyre_life + 1):
                 temp = base_temp + rng.normal(0, 0.5)
                 noise = rng.normal(0, noise_sd)
@@ -48,6 +54,11 @@ def _generate_circuit_laps(
                         "TrackTemp": temp,
                         "CorrectedLapTimeSeconds": corrected,
                         "RegulationEra": era,
+                        "StintKey": stint_key,
+                        # these fixtures don't model layout changes -- a single
+                        # variant per circuit is exactly what a "no change ever
+                        # detected" circuit looks like in real output.
+                        "Variant": f"{circuit_id}_v0",
                     }
                 )
     return rows
@@ -193,6 +204,8 @@ def test_fit_degradation_models_skips_group_with_too_few_circuits():
                     "TrackTemp": 30.0,
                     "CorrectedLapTimeSeconds": 90.0 + 0.08 * tyre_life,
                     "RegulationEra": "2022-2025 ground-effect",
+                    "StintKey": f"{circuit}_{i}",
+                    "Variant": f"{circuit}_v0",
                 }
             )
     frame = pd.DataFrame(rows)
@@ -220,6 +233,8 @@ def test_fit_degradation_models_skips_group_with_too_few_laps():
                     "TrackTemp": 30.0,
                     "CorrectedLapTimeSeconds": 90.0 + 0.08 * tyre_life,
                     "RegulationEra": "2022-2025 ground-effect",
+                    "StintKey": f"{circuit}_{i}",
+                    "Variant": f"{circuit}_v0",
                 }
             )
     frame = pd.DataFrame(rows)
@@ -279,6 +294,8 @@ def test_fit_degradation_models_returns_typed_empty_frame_when_nothing_qualifies
             "Compound",
             "RegulationEra",
             "Driver",
+            "StintKey",
+            "Variant",
         ]
     )
 

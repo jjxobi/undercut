@@ -3,6 +3,14 @@ import pandas as pd
 
 from scripts import fit_degradation_model
 
+DRIVERS = ["VER", "HAM", "LEC", "RUS", "SAI", "NOR", "ALO", "PER"]  # 8 -- clears
+# circuit_variants.MIN_DRIVERS_FOR_SIGNATURE so a real (single) variant gets
+# detected per circuit, rather than every race being dropped from the
+# signature computation and every lap ending up with a null Variant (which
+# would then get dropped entirely by fit_degradation_models' REQUIRED_COLUMNS
+# dropna and silently zero out the whole test).
+SECTOR_FRACTIONS = (0.30, 0.35, 0.35)
+
 
 def _synthetic_processed_dir(tmp_path):
     # Two stints per race/driver (a pit stop after lap 7) so TyreLife resets to 1
@@ -15,7 +23,7 @@ def _synthetic_processed_dir(tmp_path):
     rng = np.random.default_rng(7)
     rows = []
     for race in range(30):
-        for driver in ["VER", "HAM"]:
+        for driver in DRIVERS:
             race_lap = 0
             for stint_length in (7, 8):
                 for tyre_life in range(1, stint_length + 1):
@@ -25,6 +33,9 @@ def _synthetic_processed_dir(tmp_path):
                         92 + 0.09 * tyre_life + 0.001 * tyre_life**2 - 0.04 * race_lap
                         + rng.normal(0, 0.1)
                     )
+                    s1 = lap_time * SECTOR_FRACTIONS[0] + rng.normal(0, 0.02)
+                    s2 = lap_time * SECTOR_FRACTIONS[1] + rng.normal(0, 0.02)
+                    s3 = lap_time - s1 - s2
                     rows.append(
                         {
                             "Season": 2023,
@@ -36,6 +47,9 @@ def _synthetic_processed_dir(tmp_path):
                             "TyreLife": float(tyre_life),
                             "Time": pd.Timedelta(minutes=race * 90 + race_lap),
                             "LapTime": pd.Timedelta(seconds=lap_time),
+                            "Sector1Time": pd.Timedelta(seconds=s1),
+                            "Sector2Time": pd.Timedelta(seconds=s2),
+                            "Sector3Time": pd.Timedelta(seconds=s3),
                             "IsAccurate": is_accurate,
                             "TrackStatus": "1",
                             "PitInTime": pd.NaT,
@@ -44,7 +58,7 @@ def _synthetic_processed_dir(tmp_path):
                     )
     laps = pd.DataFrame(rows)
     # give each synthetic "race" its own Round so accurate_laps + grouping behave like real data
-    laps["Round"] = (laps.index // (2 * 15)) + 1
+    laps["Round"] = (laps.index // (len(DRIVERS) * 15)) + 1
 
     # Spread rounds across 3 circuits (not just one) -- the hierarchical fit
     # needs several distinct circuits to estimate a random-effects variance

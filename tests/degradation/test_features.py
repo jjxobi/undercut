@@ -86,3 +86,48 @@ def test_build_training_frame_computes_engineered_columns():
     assert result.iloc[1]["CorrectedLapTimeSeconds"] == 91.8 + 0.07 * 6
     assert result.iloc[0]["RegulationEra"] == config.regulation_era(2023)
     assert result.iloc[0]["RegulationEra"] == "2022-2025 ground-effect"
+
+
+def test_add_stint_key_builds_composite_identifier_for_one_continuous_run():
+    frame = pd.DataFrame(
+        {
+            "Season": [2023, 2023, 2023],
+            "Round": [1, 1, 5],
+            "Driver": ["VER", "VER", "HAM"],
+            "Stint": [1, 2, 1],
+        }
+    )
+
+    result = features.add_stint_key(frame)
+
+    assert list(result["StintKey"]) == ["2023_1_VER_1", "2023_1_VER_2", "2023_5_HAM_1"]
+
+
+def test_add_variant_maps_by_season_round_circuit_key():
+    frame = pd.DataFrame(
+        {
+            "Season": [2020, 2020, 2021],
+            "Round": [1, 16, 3],
+            "CircuitId": ["bahrain", "bahrain", "bahrain"],
+        }
+    )
+    variant_map = pd.Series(
+        {
+            (2020, 1, "bahrain"): "bahrain_v0",
+            (2020, 16, "bahrain"): "bahrain_v1",
+            (2021, 3, "bahrain"): "bahrain_v0",
+        }
+    )
+
+    result = features.add_variant(frame, variant_map)
+
+    assert list(result["Variant"]) == ["bahrain_v0", "bahrain_v1", "bahrain_v0"]
+
+
+def test_add_variant_leaves_unmapped_race_as_nan():
+    frame = pd.DataFrame({"Season": [2022], "Round": [99], "CircuitId": ["imola"]})
+    variant_map = pd.Series({(2020, 1, "bahrain"): "bahrain_v0"})
+
+    result = features.add_variant(frame, variant_map)
+
+    assert result["Variant"].isna().all()

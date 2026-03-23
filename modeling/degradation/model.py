@@ -16,7 +16,15 @@ BLUP_STD_EPSILON = 0.01
 FIXED_FORMULA = "CorrectedLapTimeSeconds ~ TyreLife + TyreLifeSquared + TrackTemp + C(Driver)"
 RANDOM_EFFECTS_FORMULA = "~TyreLife"
 
-REQUIRED_COLUMNS = ["TyreLife", "TyreLifeSquared", "TrackTemp", "CorrectedLapTimeSeconds", "CircuitId"]
+REQUIRED_COLUMNS = [
+    "TyreLife",
+    "TyreLifeSquared",
+    "TrackTemp",
+    "CorrectedLapTimeSeconds",
+    "CircuitId",
+    "StintKey",
+    "Variant",
+]
 
 RESULT_COLUMNS = [
     "era",
@@ -83,6 +91,10 @@ def fit_degradation_models(
             data=era_compound_frame,
             groups=era_compound_frame["CircuitId"],
             re_formula=RANDOM_EFFECTS_FORMULA,
+            vc_formula={
+                "stint": "0 + C(StintKey)",
+                "variant": "0 + C(Variant)",
+            },
         )
         fit = _fit_mixed_model(mixed_model)
         if fit is None:

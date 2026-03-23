@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from modeling.degradation import features, filters, model
+from modeling.degradation import circuit_variants, features, filters, model
 
 PROCESSED_DIR = Path("data/processed")
 OUTPUT_FILENAME = "degradation_coefficients.csv"
@@ -19,9 +19,15 @@ def run(
     schedule = pd.read_parquet(processed_dir / "schedule.parquet")
     weather = pd.read_parquet(processed_dir / "weather.parquet")
 
+    circuit_laps = features.add_circuit(laps, schedule)
+    signatures = circuit_variants.compute_race_signatures(circuit_laps)
+    variant_map = circuit_variants.detect_variants(signatures)
+
     accurate = filters.accurate_laps(laps)
     training_frame = features.build_training_frame(accurate, schedule, weather)
     training_frame = filters.exclude_rain_affected_dry_compound_laps(training_frame)
+    training_frame = features.add_stint_key(training_frame)
+    training_frame = features.add_variant(training_frame, variant_map)
 
     return model.fit_degradation_models(training_frame, min_laps_for_circuit_model)
 
