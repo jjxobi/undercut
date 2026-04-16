@@ -41,6 +41,27 @@ def test_build_race_clock_drops_missing_lap_start_times():
     assert list(clock["LapNumber"]) == [1]
 
 
+def test_build_race_clock_is_monotonically_nondecreasing_within_a_race():
+    laps = pd.DataFrame(
+        {
+            "Season": [2023, 2023, 2023],
+            "Round": [1, 1, 1],
+            "LapNumber": [1, 2, 3],
+            "LapStartTime": [
+                pd.Timedelta(seconds=0),
+                pd.Timedelta(seconds=90),
+                pd.Timedelta(seconds=85),  # artifact: earlier than lap 2's start
+            ],
+        }
+    )
+
+    clock = lap_mapping.build_race_clock(laps)
+
+    assert clock["LapStartTime"].is_monotonic_increasing or (
+        clock["LapStartTime"].diff().dropna() >= pd.Timedelta(0)
+    ).all()
+
+
 def test_hazard_event_starts_finds_one_row_per_contiguous_hazard_run():
     status = pd.DataFrame(
         {

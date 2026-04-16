@@ -13,7 +13,9 @@ def build_race_clock(laps: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
         .dropna(subset=["LapStartTime"])
     )
-    return clock.sort_values(["Season", "Round", "LapNumber"]).reset_index(drop=True)
+    clock = clock.sort_values(["Season", "Round", "LapNumber"]).reset_index(drop=True)
+    clock["LapStartTime"] = clock.groupby(["Season", "Round"])["LapStartTime"].cummax()
+    return clock
 
 
 def hazard_event_starts(track_status: pd.DataFrame) -> pd.DataFrame:
