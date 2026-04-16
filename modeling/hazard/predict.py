@@ -11,7 +11,9 @@ def hazard_probability(
     circuit_id: str,
     coefficients: pd.DataFrame,
 ) -> float:
-    circuit_match = coefficients[coefficients["circuit_id"] == circuit_id]
+    circuit_match = coefficients[
+        (coefficients["circuit_id"] == circuit_id) & (coefficients["is_latest"])
+    ]
     if len(circuit_match) > 0:
         row = circuit_match.iloc[0]
     else:
@@ -19,6 +21,9 @@ def hazard_probability(
         if len(population_match) == 0:
             raise ValueError(f"no hazard model available for circuit_id={circuit_id}")
         row = population_match.iloc[0]
+
+    if race_length <= 0:
+        raise ValueError(f"race_length must be positive, got {race_length}")
 
     is_lap_one = 1 if lap == 1 else 0
     lap_fraction = lap / race_length

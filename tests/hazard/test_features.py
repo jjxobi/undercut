@@ -111,3 +111,25 @@ def test_build_hazard_panel_skips_races_missing_from_schedule():
     panel = features.build_hazard_panel(laps, track_status, schedule)
 
     assert len(panel) == 0
+
+
+def test_add_variant_maps_by_season_round_circuit():
+    panel = pd.DataFrame(
+        {"Season": [2023, 2023], "Round": [1, 2], "CircuitId": ["monza", "monza"]}
+    )
+    variant_map = pd.Series(
+        {(2023, 1, "monza"): "monza_v0", (2023, 2, "monza"): "monza_v1"}
+    )
+
+    result = features.add_variant(panel, variant_map)
+
+    assert list(result["Variant"]) == ["monza_v0", "monza_v1"]
+
+
+def test_add_variant_leaves_nan_for_unmapped_races():
+    panel = pd.DataFrame({"Season": [2023], "Round": [1], "CircuitId": ["monza"]})
+    variant_map = pd.Series(dtype=object)
+
+    result = features.add_variant(panel, variant_map)
+
+    assert result["Variant"].isna().all()

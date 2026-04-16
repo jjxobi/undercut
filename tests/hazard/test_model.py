@@ -12,7 +12,7 @@ def _synthetic_panel() -> pd.DataFrame:
     rows = []
     circuit_effects = {"highrisk": 0.15, "midrisk": 0.0, "lowrisk": -0.15}
     for circuit, effect in circuit_effects.items():
-        for _race in range(25):
+        for race in range(25):
             race_length = 55
             incidents_so_far = 0
             for lap in range(1, race_length + 1):
@@ -26,7 +26,10 @@ def _synthetic_panel() -> pd.DataFrame:
                 event = rng.random() < probability
                 rows.append(
                     {
+                        "Season": 2023,
+                        "Round": race,
                         "CircuitId": circuit,
+                        "Variant": f"{circuit}_v0",
                         "LapFraction": lap_fraction,
                         "IsLapOne": is_lap_one,
                         "IncidentsSoFar": incidents_so_far,
@@ -53,7 +56,10 @@ def test_fit_hazard_model_produces_a_row_per_circuit_plus_population():
     result = model.fit_hazard_model(panel)
 
     assert set(result["circuit_id"].dropna()) == {"highrisk", "midrisk", "lowrisk"}
+    assert set(result["variant_id"].dropna()) == {"highrisk_v0", "midrisk_v0", "lowrisk_v0"}
     assert result["circuit_id"].isna().sum() == 1
+    # single-variant-per-circuit synthetic data: every circuit row is its circuit's latest
+    assert result[result["circuit_id"].notna()]["is_latest"].all()
 
 
 def test_fit_hazard_model_shrinks_toward_relative_circuit_ordering():

@@ -31,6 +31,7 @@ def build_hazard_panel(
     rows = []
     for (season, round_number), race_length in race_lengths.items():
         if (season, round_number) not in circuit_by_race.index:
+            print(f"skip {season} round {round_number}: not in schedule")
             continue
         circuit_id = circuit_by_race.loc[(season, round_number)]
         incidents_so_far = 0
@@ -53,3 +54,10 @@ def build_hazard_panel(
                 incidents_so_far += 1
 
     return pd.DataFrame(rows, columns=PANEL_COLUMNS)
+
+
+def add_variant(panel: pd.DataFrame, variant_map: pd.Series) -> pd.DataFrame:
+    panel = panel.copy()
+    keys = list(zip(panel["Season"], panel["Round"], panel["CircuitId"]))
+    panel["Variant"] = pd.Series(keys, index=panel.index).map(variant_map)
+    return panel

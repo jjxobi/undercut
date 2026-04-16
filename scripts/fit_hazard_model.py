@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from modeling.degradation import circuit_variants
+from modeling.degradation import features as degradation_features
 from modeling.hazard import features, model
 
 PROCESSED_DIR = Path("data/processed")
@@ -16,7 +18,14 @@ def run(processed_dir: Path = PROCESSED_DIR) -> pd.DataFrame:
     track_status = pd.read_parquet(processed_dir / "track_status.parquet")
     schedule = pd.read_parquet(processed_dir / "schedule.parquet")
 
+    circuit_laps = degradation_features.add_circuit(laps, schedule)
+    signatures = circuit_variants.compute_race_signatures(circuit_laps)
+    variant_map = circuit_variants.detect_variants(signatures)
+
     panel = features.build_hazard_panel(laps, track_status, schedule)
+    panel = features.add_variant(panel, variant_map)
+    panel = panel.dropna(subset=["Variant"])
+
     return model.fit_hazard_model(panel)
 
 
