@@ -10,11 +10,16 @@ def _synthetic_frame() -> pd.DataFrame:
     # "sparse" circuit: only 3 races -- should get shrunk toward the population value.
     rng = np.random.default_rng(4)
     rows = []
-    for circuit, true_sd, n_races in [("steady", 1.0, 60), ("chaotic", 8.0, 60), ("sparse", 8.0, 3)]:
+    for circuit_index, (circuit, true_sd, n_races) in enumerate(
+        [("steady", 1.0, 60), ("chaotic", 8.0, 60), ("sparse", 8.0, 3)]
+    ):
+        season = 2000 + circuit_index
         for race in range(n_races):
             for _driver in range(20):
                 delta = rng.normal(0, true_sd)
-                rows.append({"CircuitId": circuit, "PositionDelta": delta})
+                rows.append(
+                    {"CircuitId": circuit, "Season": season, "Round": race, "PositionDelta": delta}
+                )
     return pd.DataFrame(rows)
 
 

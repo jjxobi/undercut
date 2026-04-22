@@ -10,18 +10,19 @@ RESULT_COLUMNS = ["circuit_id", "n_races", "mean_position_delta", "position_delt
 
 def fit_position_volatility(frame: pd.DataFrame) -> pd.DataFrame:
     population_variance = float(frame["PositionDelta"].var())
+    population_n_races = frame[["Season", "Round"]].drop_duplicates().shape[0]
 
     records = [
         {
             "circuit_id": None,
-            "n_races": len(frame),
+            "n_races": population_n_races,
             "mean_position_delta": float(frame["PositionDelta"].mean()),
             "position_delta_sd": float(np.sqrt(population_variance)),
         }
     ]
 
     for circuit_id, circuit_frame in frame.groupby("CircuitId"):
-        n_races = len(circuit_frame)
+        n_races = circuit_frame[["Season", "Round"]].drop_duplicates().shape[0]
         circuit_variance = float(circuit_frame["PositionDelta"].var()) if n_races > 1 else population_variance
         if pd.isna(circuit_variance):
             circuit_variance = population_variance
