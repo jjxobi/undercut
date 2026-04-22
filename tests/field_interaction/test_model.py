@@ -56,3 +56,21 @@ def test_fit_position_volatility_produces_one_row_per_circuit_plus_population():
 
     assert set(result["circuit_id"].dropna()) == {"steady", "chaotic", "sparse"}
     assert result["circuit_id"].isna().sum() == 1
+
+
+def test_fit_position_volatility_counts_distinct_races_not_rows():
+    # regression guard: n_races must reflect distinct (Season, Round) pairs,
+    # not driver-race row counts (20 rows per race in this fixture) -- a prior
+    # bug used len(circuit_frame), which silently defeated shrinkage for
+    # sparse circuits since the row count is always ~20x the real race count.
+    frame = _synthetic_frame()
+
+    result = model.fit_position_volatility(frame)
+
+    sparse_n_races = result[result["circuit_id"] == "sparse"].iloc[0]["n_races"]
+    steady_n_races = result[result["circuit_id"] == "steady"].iloc[0]["n_races"]
+    population_n_races = result[result["circuit_id"].isna()].iloc[0]["n_races"]
+
+    assert sparse_n_races == 3
+    assert steady_n_races == 60
+    assert population_n_races == 60 + 60 + 3
