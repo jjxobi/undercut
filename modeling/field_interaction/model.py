@@ -3,8 +3,23 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+# K=5.0 "races worth" of shrinkage. Empirically close to the method-of-moments
+# empirical-Bayes optimum for this dataset (~5.7), not an arbitrary choice.
 SHRINKAGE_STRENGTH = 5.0
 
+# `mean_position_delta` is close to zero for every circuit by construction --
+# Position is a permutation of the classified finishers each race, so gains and
+# losses net out within the field. Do not read it as "typical positions gained
+# at this circuit"; `position_delta_sd` (the shrinkage-adjusted spread) is the
+# statistic this phase actually validates and later phases should use.
+#
+# This model pools raw CircuitId rather than the layout-variant identifiers
+# Phases 1-2 use (see modeling.degradation.circuit_variants) -- a deliberate
+# simplification for this phase. Real impact is small (~2.6% on the one known
+# case, Bahrain's 2020 Sakhir-layout race folded into the normal Bahrain
+# circuit), unlike Phase 1's degradation model where layout conflation caused
+# a sign-flipped coefficient. Revisit if a future phase needs circuit-level
+# precision this doesn't provide.
 RESULT_COLUMNS = ["circuit_id", "n_races", "mean_position_delta", "position_delta_sd"]
 
 
