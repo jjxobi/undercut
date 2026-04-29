@@ -7,11 +7,14 @@ import pandas as pd
 # empirical-Bayes optimum for this dataset (~5.7), not an arbitrary choice.
 SHRINKAGE_STRENGTH = 5.0
 
-# `mean_position_delta` is close to zero for every circuit by construction --
-# Position is a permutation of the classified finishers each race, so gains and
-# losses net out within the field. Do not read it as "typical positions gained
-# at this circuit"; `position_delta_sd` (the shrinkage-adjusted spread) is the
-# statistic this phase actually validates and later phases should use.
+# `mean_position_delta` is systematically positive (population ~+1.16, per-circuit
+# 0.3-3.5) and correlates with each circuit's retirement rate, not with overtaking
+# difficulty -- it's a survivorship artifact of restricting to classified finishers
+# (build_position_change_frame excludes DNF/DNS/DSQ rows; when a car ahead retires,
+# every classified finisher behind it gains a position without passing anyone).
+# Do not read it as "typical positions gained at this circuit"; `position_delta_sd`
+# (the shrinkage-adjusted spread) is the statistic this phase actually validates
+# and later phases should use.
 #
 # This model pools raw CircuitId rather than the layout-variant identifiers
 # Phases 1-2 use (see modeling.degradation.circuit_variants) -- a deliberate
