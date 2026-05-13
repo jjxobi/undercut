@@ -14,6 +14,7 @@ dependencies = [
     "pyarrow>=14.0",
     "requests>=2.31",
     "statsmodels>=0.14",
+    "ortools>=9.15",
 ]
 
 [project.optional-dependencies]
