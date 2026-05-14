@@ -54,9 +54,9 @@ def solve_stint_lengths(
         model.Add(scenario_total == sum(stint_costs) + sum(pit_losses))
         scenario_totals.append(scenario_total)
 
-    avg_cost = model.NewIntVar(0, 10_000_000, "avg_cost")
-    model.Add(avg_cost * len(scenario_totals) == sum(scenario_totals))
-    model.Minimize(avg_cost)
+    total_cost = model.NewIntVar(0, 10_000_000 * len(scenario_totals), "total_cost")
+    model.Add(total_cost == sum(scenario_totals))
+    model.Minimize(total_cost)
 
     cp_solver = cp_model.CpSolver()
     cp_solver.parameters.max_time_in_seconds = MAX_SOLVE_SECONDS
@@ -69,5 +69,5 @@ def solve_stint_lengths(
         "status": "optimal" if status == cp_model.OPTIMAL else "feasible",
         "stint_lengths": [cp_solver.Value(v) for v in stint_lengths],
         "pit_laps": [cp_solver.Value(v) for v in pit_laps],
-        "expected_cost_seconds": cp_solver.Value(avg_cost) / 100.0,
+        "expected_cost_seconds": cp_solver.Value(total_cost) / 100.0 / len(scenario_totals),
     }
