@@ -11,6 +11,38 @@ PROCESSED_DIR = Path("data/processed")
 DEFAULT_N_SCENARIOS = 200
 
 
+def _expected_cost_of_fixed_plan(
+    stint_lengths: list[int],
+    cumulative_cost_tables: list[list[int]],
+    sampled_scenarios: list[list[bool]],
+    pit_loss_seconds: float,
+) -> float:
+    # prices a plan's own already-chosen stint lengths against the sampled
+    # scenarios -- solver.solve_stint_lengths would instead re-time the pit
+    # stops for whatever scenario set it's handed, which defeats the point
+    # of asking how a plan committed to in advance holds up later
+    pit_laps = []
+    running_total = stint_lengths[0]
+    for stint_length in stint_lengths[1:]:
+        pit_laps.append(running_total)
+        running_total += stint_length
+
+    stint_cost_seconds = sum(
+        cumulative_cost_tables[i][stint_lengths[i]] / degradation_lookup.CENTISECONDS_PER_SECOND
+        for i in range(len(stint_lengths))
+    )
+
+    total_cost_seconds = 0.0
+    for scenario in sampled_scenarios:
+        pit_cost_seconds = 0.0
+        for pit_lap in pit_laps:
+            is_sc = scenario[pit_lap - 1]
+            pit_cost_seconds += pit_loss_seconds * solver.PIT_LOSS_SC_FRACTION if is_sc else pit_loss_seconds
+        total_cost_seconds += stint_cost_seconds + pit_cost_seconds
+
+    return total_cost_seconds / len(sampled_scenarios)
+
+
 def run(
     processed_dir: Path,
     circuit_id: str,
@@ -47,8 +79,8 @@ def run(
         race_length, circuit_id, era, degradation_coefficients, sampled_scenarios, pit_loss_seconds
     )
 
-    # the failure demonstration: re-evaluate the DETERMINISTIC plan's own
-    # compound/stint choice against the realistic scenario set, to see how
+    # the failure demonstration: price the DETERMINISTIC plan's own already
+    # chosen stint lengths against the realistic scenario set, to see how
     # much worse its confident commitment performs once safety cars are real
     deterministic_tables = [
         degradation_lookup.build_cumulative_cost_table(
@@ -56,14 +88,14 @@ def run(
         )
         for compound in deterministic_result["compounds"]
     ]
-    deterministic_evaluated = solver.solve_stint_lengths(
-        race_length, deterministic_tables, sampled_scenarios, pit_loss_seconds
+    deterministic_evaluated_cost = _expected_cost_of_fixed_plan(
+        deterministic_result["stint_lengths"], deterministic_tables, sampled_scenarios, pit_loss_seconds
     )
 
     return {
         "deterministic": deterministic_result,
         "stochastic": stochastic_result,
-        "deterministic_evaluated_on_scenarios": deterministic_evaluated["expected_cost_seconds"],
+        "deterministic_evaluated_on_scenarios": deterministic_evaluated_cost,
         "pit_loss_seconds": pit_loss_seconds,
     }
 
