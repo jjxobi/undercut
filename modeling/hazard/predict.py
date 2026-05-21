@@ -33,4 +33,9 @@ def hazard_probability(
         + row["lap_fraction_coef"] * lap_fraction
         + row["incidents_so_far_coef"] * incidents_so_far
     )
-    return float(1.0 / (1.0 + np.exp(-log_odds)))
+    # exp(-log_odds) overflows for very negative log_odds even though the
+    # limit is just 0.0, so compute exp() on whichever side stays bounded.
+    if log_odds >= 0:
+        return float(1.0 / (1.0 + np.exp(-log_odds)))
+    odds = np.exp(log_odds)
+    return float(odds / (1.0 + odds))
