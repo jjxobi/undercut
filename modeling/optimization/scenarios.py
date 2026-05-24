@@ -26,9 +26,6 @@ def sample_scenario(
     incidents_so_far = 0
     lap = 1
     while lap <= race_length:
-        if is_active[lap]:
-            lap += 1
-            continue
         probability = hazard_predict.hazard_probability(
             lap, race_length, incidents_so_far, circuit_id, hazard_coefficients
         )

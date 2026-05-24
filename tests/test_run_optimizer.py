@@ -70,6 +70,7 @@ def test_run_produces_deterministic_and_stochastic_results(tmp_path):
     assert result["deterministic"]["status"] in ("optimal", "feasible")
     assert result["stochastic"]["status"] in ("optimal", "feasible")
     assert isinstance(result["deterministic_evaluated_on_scenarios"], float)
+    assert isinstance(result["stochastic_evaluated_on_scenarios"], float)
 
 
 def test_main_runs_without_error(tmp_path, monkeypatch, capsys):
