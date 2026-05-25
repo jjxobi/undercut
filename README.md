@@ -1,11 +1,12 @@
 # dispatch
 
 F1 race strategy under safety-car uncertainty. Built on a tyre degradation
-model, a safety-car hazard model, and a smaller model for how a driver's
-own pace is bent by the cars around them, all fit on real lap data pulled
-through the pipeline. On top of that sits a CP-SAT pit-strategy optimizer
-that has to commit to a pit plan before knowing when the safety car comes
-out.
+model and a safety-car hazard model, both fit on real lap data pulled
+through the pipeline, plus a smaller circuit-level model of how much
+finishing order scatters from the grid (fit on race results, not lap data,
+and not yet wired into the optimizer below). On top of the degradation and
+hazard models sits a CP-SAT pit-strategy optimizer that has to commit to a
+pit plan before knowing when the safety car comes out.
 
 `scripts/run_optimizer.py` runs the optimizer end to end for a given
 circuit and race length: it builds a "deterministic" plan (optimized

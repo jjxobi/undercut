@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import statistics
 from pathlib import Path
 
 import pandas as pd
@@ -9,20 +10,20 @@ from modeling.optimization import degradation_lookup, pit_loss, scenarios, solve
 
 PROCESSED_DIR = Path("data/processed")
 DEFAULT_N_SCENARIOS = 200
-GAP_NEGLIGIBLE_SECONDS = 0.05
+GAP_SIGNIFICANCE_MULTIPLIER = 2.0
 
 
-def _expected_cost_of_fixed_plan(
+def _per_scenario_costs(
     stint_lengths: list[int],
     cumulative_cost_tables: list[list[int]],
     evaluation_scenarios: list[list[bool]],
     pit_loss_seconds: float,
-) -> float:
-    # prices any already-chosen set of stint lengths against a scenario set --
-    # solver.solve_stint_lengths would instead re-time the pit stops for
-    # whatever scenario set it's handed, which defeats the point of asking
-    # how a plan committed to in advance holds up against scenarios it
-    # wasn't built around
+) -> list[float]:
+    # prices any already-chosen set of stint lengths against each scenario in
+    # turn -- solver.solve_stint_lengths would instead re-time the pit stops
+    # for whatever scenario set it's handed, which defeats the point of
+    # asking how a plan committed to in advance holds up against scenarios
+    # it wasn't built around
     pit_laps = []
     running_total = stint_lengths[0]
     for stint_length in stint_lengths[1:]:
@@ -34,15 +35,25 @@ def _expected_cost_of_fixed_plan(
         for i in range(len(stint_lengths))
     )
 
-    total_cost_seconds = 0.0
+    costs = []
     for scenario in evaluation_scenarios:
         pit_cost_seconds = 0.0
         for pit_lap in pit_laps:
             is_sc = scenario[pit_lap - 1]
             pit_cost_seconds += pit_loss_seconds * solver.PIT_LOSS_SC_FRACTION if is_sc else pit_loss_seconds
-        total_cost_seconds += stint_cost_seconds + pit_cost_seconds
+        costs.append(stint_cost_seconds + pit_cost_seconds)
 
-    return total_cost_seconds / len(evaluation_scenarios)
+    return costs
+
+
+def _expected_cost_of_fixed_plan(
+    stint_lengths: list[int],
+    cumulative_cost_tables: list[list[int]],
+    evaluation_scenarios: list[list[bool]],
+    pit_loss_seconds: float,
+) -> float:
+    costs = _per_scenario_costs(stint_lengths, cumulative_cost_tables, evaluation_scenarios, pit_loss_seconds)
+    return statistics.mean(costs)
 
 
 def run(
@@ -109,11 +120,25 @@ def run(
         for compound in stochastic_result["compounds"]
     ]
 
-    deterministic_evaluated_cost = _expected_cost_of_fixed_plan(
+    deterministic_costs = _per_scenario_costs(
         deterministic_result["stint_lengths"], deterministic_tables, evaluation_scenarios, pit_loss_seconds
     )
-    stochastic_evaluated_cost = _expected_cost_of_fixed_plan(
+    stochastic_costs = _per_scenario_costs(
         stochastic_result["stint_lengths"], stochastic_tables, evaluation_scenarios, pit_loss_seconds
+    )
+    deterministic_evaluated_cost = statistics.mean(deterministic_costs)
+    stochastic_evaluated_cost = statistics.mean(stochastic_costs)
+
+    # the gap between the two plans' means is itself a statistic drawn from a
+    # finite scenario sample -- pair the per-scenario costs (same scenario,
+    # both plans) and use the standard error of that paired difference so the
+    # gap can be judged against its own sampling noise instead of a fixed
+    # constant
+    paired_differences = [d - s for d, s in zip(deterministic_costs, stochastic_costs)]
+    gap_standard_error = (
+        statistics.stdev(paired_differences) / len(paired_differences) ** 0.5
+        if len(paired_differences) > 1
+        else 0.0
     )
 
     return {
@@ -121,6 +146,7 @@ def run(
         "stochastic": stochastic_result,
         "deterministic_evaluated_on_scenarios": deterministic_evaluated_cost,
         "stochastic_evaluated_on_scenarios": stochastic_evaluated_cost,
+        "gap_standard_error": gap_standard_error,
         "pit_loss_seconds": pit_loss_seconds,
     }
 
@@ -173,9 +199,10 @@ def main() -> None:
     # neither optimization step ever saw -- this is the only comparison
     # that's actually a fair test of whether hedging paid off
     gap = result["deterministic_evaluated_on_scenarios"] - result["stochastic_evaluated_on_scenarios"]
+    gap_se = result["gap_standard_error"]
     print(f"On held-out scenarios: deterministic {result['deterministic_evaluated_on_scenarios']:.1f}s vs. "
-          f"stochastic {result['stochastic_evaluated_on_scenarios']:.1f}s (gap {gap:+.2f}s)")
-    if abs(gap) < GAP_NEGLIGIBLE_SECONDS:
+          f"stochastic {result['stochastic_evaluated_on_scenarios']:.1f}s (gap {gap:+.2f}s ± {gap_se:.2f}s)")
+    if abs(gap) <= GAP_SIGNIFICANCE_MULTIPLIER * gap_se:
         print("No meaningful difference between the two plans on held-out scenarios -- "
               "hedging against the safety car neither helped nor hurt here.")
     elif gap > 0:
