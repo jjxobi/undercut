@@ -46,16 +46,6 @@ def _per_scenario_costs(
     return costs
 
 
-def _expected_cost_of_fixed_plan(
-    stint_lengths: list[int],
-    cumulative_cost_tables: list[list[int]],
-    evaluation_scenarios: list[list[bool]],
-    pit_loss_seconds: float,
-) -> float:
-    costs = _per_scenario_costs(stint_lengths, cumulative_cost_tables, evaluation_scenarios, pit_loss_seconds)
-    return statistics.mean(costs)
-
-
 def run(
     processed_dir: Path,
     circuit_id: str,
