@@ -11,7 +11,7 @@ SCHEDULE = [
 
 RESULTS = [
     {"position": "1", "grid": "2", "status": "Finished",
-     "Driver": {"driverId": "max_verstappen"}}
+     "Driver": {"driverId": "max_verstappen", "code": "VER"}}
 ]
 
 
@@ -66,6 +66,14 @@ def test_build_returns_all_expected_tables(monkeypatch):
     assert tables["schedule"].iloc[0]["CircuitId"] == "bahrain"
     assert tables["results"].iloc[0]["Driver"] == "max_verstappen"
     assert tables["results"].iloc[0]["Position"] == 1
+
+
+def test_build_results_include_driver_code(monkeypatch):
+    _patch_pipeline(monkeypatch)
+
+    tables = build_dataset.build([2023])
+
+    assert tables["results"].iloc[0]["Code"] == "VER"
 
 
 TWO_ROUND_SCHEDULE = [

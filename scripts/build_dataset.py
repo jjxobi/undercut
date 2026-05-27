@@ -38,6 +38,7 @@ def build(seasons: list[int], refresh: bool = False) -> dict[str, pd.DataFrame]:
                         "Season": season,
                         "Round": round_number,
                         "Driver": result["Driver"]["driverId"],
+                        "Code": result["Driver"]["code"],
                         "Position": int(position) if position.isdigit() else None,
                         "Status": result["status"],
                         "GridPosition": int(result["grid"]),
