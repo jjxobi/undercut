@@ -7,7 +7,7 @@ MIN_OBSERVATIONS = 20
 
 def estimate_seconds_per_position(laps: pd.DataFrame, results: pd.DataFrame) -> float:
     finished = results[results["Status"].eq("Finished") | results["Status"].str.contains("Lap", na=False)]
-    finished_keys = finished.rename(columns={"Code": "Driver"})[["Season", "Round", "Driver"]]
+    finished_keys = finished[["Season", "Round", "Code"]].rename(columns={"Code": "Driver"})
 
     last_laps = (
         laps.sort_values(["Season", "Round", "Driver", "LapNumber"])
