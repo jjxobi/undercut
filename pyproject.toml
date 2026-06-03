@@ -15,12 +15,16 @@ dependencies = [
     "requests>=2.31",
     "statsmodels>=0.14",
     "ortools>=9.15",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "ruff>=0.5",
+    "jupyter>=1.0",
+    "nbconvert>=7.0",
+    "ipykernel>=6.29",
 ]
 
 [tool.setuptools.packages.find]
