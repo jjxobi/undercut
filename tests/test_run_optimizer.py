@@ -71,6 +71,8 @@ def test_run_produces_deterministic_and_stochastic_results(tmp_path):
     assert result["stochastic"]["status"] in ("optimal", "feasible")
     assert isinstance(result["deterministic_evaluated_on_scenarios"], float)
     assert isinstance(result["stochastic_evaluated_on_scenarios"], float)
+    assert len(result["deterministic_costs"]) == 5
+    assert len(result["stochastic_costs"]) == 5
 
 
 def test_run_evaluates_on_a_different_seed_than_it_optimizes_on(tmp_path, monkeypatch):

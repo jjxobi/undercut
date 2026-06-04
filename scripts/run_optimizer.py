@@ -104,6 +104,8 @@ def run(
         "deterministic_evaluated_on_scenarios": deterministic_evaluated_cost,
         "stochastic_evaluated_on_scenarios": stochastic_evaluated_cost,
         "gap_standard_error": gap_standard_error,
+        "deterministic_costs": deterministic_costs,
+        "stochastic_costs": stochastic_costs,
         "pit_loss_seconds": pit_loss_seconds,
     }
 
