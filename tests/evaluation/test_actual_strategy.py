@@ -1,6 +1,7 @@
 import pandas as pd
 
 from modeling.evaluation import actual_strategy
+from modeling.optimization import solver
 
 
 def _stints() -> pd.DataFrame:
@@ -46,6 +47,55 @@ def test_extract_actual_strategies_keeps_only_full_distance_finishers_on_a_candi
     assert result.iloc[0]["round"] == 1
     assert result.iloc[0]["compounds"] == ["SOFT", "MEDIUM"]
     assert result.iloc[0]["stint_lengths"] == [15, 15]
+
+
+def _stints_with_short_stint() -> pd.DataFrame:
+    # SAI: matches a candidate sequence and full race distance, but the first
+    # stint is a single lap -- shorter than the solver would ever search over -- drop
+    return pd.concat(
+        [
+            _stints(),
+            pd.DataFrame(
+                [
+                    {
+                        "Season": 2023,
+                        "Round": 1,
+                        "Driver": "SAI",
+                        "Stint": 1.0,
+                        "Compound": "SOFT",
+                        "StintLength": 1.0,
+                    },
+                    {
+                        "Season": 2023,
+                        "Round": 1,
+                        "Driver": "SAI",
+                        "Stint": 2.0,
+                        "Compound": "HARD",
+                        "StintLength": 29.0,
+                    },
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+
+
+def _results_with_short_stint() -> pd.DataFrame:
+    return pd.concat(
+        [_results(), pd.DataFrame([{"Season": 2023, "Round": 1, "Code": "SAI", "Status": "Finished"}])],
+        ignore_index=True,
+    )
+
+
+def test_extract_actual_strategies_drops_stints_shorter_than_the_solvers_minimum():
+    assert min([1, 29]) < solver.MIN_STINT_LENGTH
+
+    result = actual_strategy.extract_actual_strategies(
+        _stints_with_short_stint(), _results_with_short_stint(), _race_lengths()
+    )
+
+    assert "SAI" not in result["driver"].tolist()
+    assert result["driver"].tolist() == ["VER"]
 
 
 def test_extract_actual_strategies_returns_empty_frame_with_expected_columns_when_nothing_matches():

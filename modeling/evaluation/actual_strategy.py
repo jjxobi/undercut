@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from modeling.optimization import strategy
+from modeling.optimization import solver, strategy
 
 RESULT_COLUMNS = ["season", "round", "driver", "compounds", "stint_lengths"]
 
@@ -30,6 +30,8 @@ def extract_actual_strategies(
 
         stint_lengths = [int(length) for length in ordered["StintLength"].tolist()]
         if sum(stint_lengths) != int(race_lengths.loc[(season, round_number)]):
+            continue
+        if min(stint_lengths) < solver.MIN_STINT_LENGTH:
             continue
 
         records.append(
