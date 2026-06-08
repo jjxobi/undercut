@@ -7,6 +7,7 @@ import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api import circuits
 from modeling import config
 from modeling.optimization import pit_loss
 
@@ -47,6 +48,8 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok"}
+
+    app.include_router(circuits.router)
 
     return app
 
