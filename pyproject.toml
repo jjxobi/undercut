@@ -16,6 +16,8 @@ dependencies = [
     "statsmodels>=0.14",
     "ortools>=9.15",
     "matplotlib>=3.8",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -25,10 +27,11 @@ dev = [
     "jupyter>=1.0",
     "nbconvert>=7.0",
     "ipykernel>=6.29",
+    "httpx>=0.27",
 ]
 
 [tool.setuptools.packages.find]
-include = ["modeling*", "scripts*"]
+include = ["modeling*", "scripts*", "api*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
