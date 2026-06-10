@@ -7,12 +7,14 @@ from modeling.optimization import scenarios, strategy
 
 router = APIRouter()
 
+MAX_CACHE_ENTRIES = 256
+
 
 class StrategyRequest(BaseModel):
     circuit_id: str
     era: str
-    race_length: int = Field(gt=0)
-    n_scenarios: int = Field(default=200, gt=0)
+    race_length: int = Field(gt=0, le=100)
+    n_scenarios: int = Field(default=200, gt=0, le=2000)
     seed: int = 0
 
 
@@ -33,9 +35,11 @@ def solve_strategy(payload: StrategyRequest, request: Request) -> StrategyRespon
     if payload.era not in state.known_eras:
         raise HTTPException(status_code=422, detail=f"unknown era: {payload.era}")
 
+    cache = state.strategy_cache
     cache_key = (payload.circuit_id, payload.era, payload.race_length, payload.n_scenarios, payload.seed)
-    if cache_key in state.strategy_cache:
-        return state.strategy_cache[cache_key]
+    if cache_key in cache:
+        cache.move_to_end(cache_key)
+        return cache[cache_key]
 
     pit_loss_table = state.pit_loss_table
     circuit_pit_loss = pit_loss_table[pit_loss_table["circuit_id"] == payload.circuit_id]
@@ -75,5 +79,7 @@ def solve_strategy(payload: StrategyRequest, request: Request) -> StrategyRespon
         expected_cost_seconds=result["expected_cost_seconds"],
         pit_loss_seconds=pit_loss_seconds,
     )
-    state.strategy_cache[cache_key] = response
+    cache[cache_key] = response
+    if len(cache) > MAX_CACHE_ENTRIES:
+        cache.popitem(last=False)
     return response

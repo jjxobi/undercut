@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from api.main import create_app
+from api.strategy import MAX_CACHE_ENTRIES
 from tests.api.test_main import _synthetic_data_dir
 
 
@@ -57,3 +58,43 @@ def test_solve_strategy_caches_identical_requests(tmp_path):
     assert first.json() == second.json()
     assert cache_size_after_first == 1
     assert cache_size_after_second == 1
+
+
+def test_solve_strategy_rejects_absurd_race_length(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/strategy",
+            json={"circuit_id": "bahrain", "era": "2018-2021 aero", "race_length": 500, "n_scenarios": 5, "seed": 1},
+        )
+
+    assert response.status_code == 422
+
+
+def test_solve_strategy_rejects_absurd_n_scenarios(tmp_path):
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/strategy",
+            json={"circuit_id": "bahrain", "era": "2018-2021 aero", "race_length": 20, "n_scenarios": 5000, "seed": 1},
+        )
+
+    assert response.status_code == 422
+
+
+def test_solve_strategy_cache_evicts_oldest_entry_past_the_cap(tmp_path):
+    data_dir = _synthetic_data_dir(tmp_path)
+    app = create_app(data_dir=data_dir)
+
+    with TestClient(app) as client:
+        for i in range(MAX_CACHE_ENTRIES):
+            key = ("bahrain", "2018-2021 aero", 20, 5, i)
+            app.state.strategy_cache[key] = object()
+
+        assert len(app.state.strategy_cache) == MAX_CACHE_ENTRIES
+
+        response = client.post(
+            "/strategy",
+            json={"circuit_id": "bahrain", "era": "2018-2021 aero", "race_length": 20, "n_scenarios": 5, "seed": 99999},
+        )
+
+    assert response.status_code == 200
+    assert len(app.state.strategy_cache) == MAX_CACHE_ENTRIES

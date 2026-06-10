@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from api import circuits, evaluation, strategy
 from modeling import config
 from modeling.optimization import pit_loss
 
 PROCESSED_DIR = Path("data/processed")
+
+
+class HealthResponse(BaseModel):
+    status: str
 
 
 def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
@@ -34,7 +40,7 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
         latest = merged.sort_values("Season").groupby("CircuitId").last()
         app.state.default_race_lengths = latest["LapNumber"].astype(int).to_dict()
 
-        app.state.strategy_cache = {}
+        app.state.strategy_cache = OrderedDict()
         yield
 
     app = FastAPI(title="dispatch", lifespan=lifespan)
@@ -45,9 +51,9 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.get("/health")
-    def health() -> dict:
-        return {"status": "ok"}
+    @app.get("/health", response_model=HealthResponse)
+    def health() -> HealthResponse:
+        return HealthResponse(status="ok")
 
     app.include_router(circuits.router)
     app.include_router(strategy.router)
