@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from api import circuits, evaluation, strategy
+from api import circuits, compare, evaluation, strategy
 from modeling import config
 from modeling.optimization import pit_loss
 
@@ -28,6 +28,7 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
         app.state.hazard_coefficients = pd.read_csv(data_dir / "hazard_coefficients.csv")
         app.state.laps = pd.read_parquet(data_dir / "laps.parquet")
         app.state.schedule = pd.read_parquet(data_dir / "schedule.parquet")
+        app.state.results = pd.read_parquet(data_dir / "results.parquet")
         app.state.pit_loss_table = pit_loss.estimate_pit_loss(app.state.laps, app.state.schedule)
 
         app.state.known_circuit_ids = set(app.state.schedule["CircuitId"].unique())
@@ -58,6 +59,7 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
     app.include_router(circuits.router)
     app.include_router(strategy.router)
     app.include_router(evaluation.router)
+    app.include_router(compare.router)
 
     return app
 

@@ -24,6 +24,7 @@ def test_evaluation_summary_returns_headline_numbers(tmp_path):
     assert body["mean_actual_regret_seconds"] == 15.0
     assert body["mean_policy_regret_seconds"] == 3.0
     assert body["captured_fraction"] == 0.8
+    assert isinstance(body["mean_regret_positions_per_race"], float)
 
 
 def test_evaluation_summary_returns_503_when_report_missing(tmp_path):

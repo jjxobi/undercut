@@ -52,12 +52,54 @@ def _synthetic_data_dir(tmp_path):
                     "TrackStatus": "1",
                     "PitInTime": pd.Timedelta(seconds=(lap - 1) * 90 + 45) if is_pit_lap else pd.NaT,
                     "PitOutTime": pd.NaT,
+                    "Time": pd.NaT,
+                    "Position": float("nan"),
                 }
             )
+
+    # a handful of finished-race finishing times, purely so the position-gap
+    # estimator has real same-lap-count adjacent-position gaps to work from --
+    # these races aren't in schedule.parquet, so they don't touch pit-loss or
+    # strategy solving, only the regret-to-positions conversion
+    results_rows = []
+    for race_index in range(25):
+        season = 2018 + race_index % 5
+        round_number = 1 + race_index // 5
+        base_time = 4000.0 + rng.normal(0, 5)
+        for position, driver in enumerate(["d1", "d2"], start=1):
+            gap = rng.uniform(15, 25)
+            finish_time = base_time + (position - 1) * gap
+            laps_rows.append(
+                {
+                    "Season": season,
+                    "Round": round_number,
+                    "Driver": driver,
+                    "LapNumber": 20,
+                    "LapTime": pd.Timedelta(seconds=90),
+                    "TrackStatus": "1",
+                    "PitInTime": pd.NaT,
+                    "PitOutTime": pd.NaT,
+                    "Time": pd.Timedelta(seconds=finish_time),
+                    "Position": float(position),
+                }
+            )
+            results_rows.append(
+                {
+                    "Season": season,
+                    "Round": round_number,
+                    "Driver": driver,
+                    "Code": driver,
+                    "Position": position,
+                    "Status": "Finished",
+                    "GridPosition": position,
+                }
+            )
+
     pd.DataFrame(laps_rows).to_parquet(tmp_path / "laps.parquet", index=False)
     pd.DataFrame({"Season": [2023], "Round": [1], "CircuitId": ["bahrain"]}).to_parquet(
         tmp_path / "schedule.parquet", index=False
     )
+    pd.DataFrame(results_rows).to_parquet(tmp_path / "results.parquet", index=False)
     return tmp_path
 
 
