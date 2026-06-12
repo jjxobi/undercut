@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from scripts import run_optimizer
+from modeling.optimization import comparison
 
 
 def _synthetic_processed_dir(tmp_path):
@@ -60,23 +60,42 @@ def _synthetic_processed_dir(tmp_path):
     return tmp_path
 
 
-def test_main_runs_without_error(tmp_path, monkeypatch, capsys):
+def test_run_produces_deterministic_and_stochastic_results(tmp_path):
     processed_dir = _synthetic_processed_dir(tmp_path)
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "run_optimizer.py",
-            "--processed-dir", str(processed_dir),
-            "--circuit-id", "bahrain",
-            "--era", "2018-2021 aero",
-            "--race-length", "20",
-            "--n-scenarios", "5",
-            "--seed", "11",
-        ],
+
+    result = comparison.compare_deterministic_vs_stochastic(
+        processed_dir, circuit_id="bahrain", era="2018-2021 aero", race_length=20, n_scenarios=5, seed=11
     )
 
-    run_optimizer.main()
+    assert result["deterministic"]["status"] in ("optimal", "feasible")
+    assert result["stochastic"]["status"] in ("optimal", "feasible")
+    assert isinstance(result["deterministic_evaluated_on_scenarios"], float)
+    assert isinstance(result["stochastic_evaluated_on_scenarios"], float)
+    assert len(result["deterministic_costs"]) == 5
+    assert len(result["stochastic_costs"]) == 5
 
-    captured = capsys.readouterr()
-    assert "deterministic" in captured.out.lower()
-    assert "stochastic" in captured.out.lower()
+
+def test_run_evaluates_on_a_different_seed_than_it_optimizes_on(tmp_path, monkeypatch):
+    # the stochastic plan is optimized against scenarios sampled with `seed`;
+    # if evaluation_scenarios were ever drawn with that same seed instead of
+    # `seed + 1`, both plans would be graded on the stochastic plan's own
+    # training data and the held-out comparison would silently stop being
+    # held out. Spy on sample_scenarios and require at least two distinct
+    # seeds across a single run() call so that regression can't slip back in.
+    processed_dir = _synthetic_processed_dir(tmp_path)
+    original_sample_scenarios = comparison.scenarios.sample_scenarios
+    seen_seeds = []
+
+    def spy(*args, **kwargs):
+        seed = kwargs["seed"] if "seed" in kwargs else args[-1]
+        seen_seeds.append(seed)
+        return original_sample_scenarios(*args, **kwargs)
+
+    monkeypatch.setattr(comparison.scenarios, "sample_scenarios", spy)
+
+    comparison.compare_deterministic_vs_stochastic(
+        processed_dir, circuit_id="bahrain", era="2018-2021 aero", race_length=20, n_scenarios=5, seed=11
+    )
+
+    assert len(seen_seeds) == 2
+    assert len(set(seen_seeds)) == 2
