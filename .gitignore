@@ -12,3 +12,5 @@ data/*.log
 node_modules/
 dist/
 build/
+studio/node_modules/
+studio/dist/
