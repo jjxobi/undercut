@@ -1,0 +1,58 @@
+.stint-bar {
+  width: 100%;
+}
+
+.stint-bar-reveal {
+  animation: stint-bar-reveal 400ms ease-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes stint-bar-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stint-bar-reveal {
+    animation: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.stint-bar-track {
+  display: flex;
+  width: 100%;
+  height: 52px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stint-bar-segment {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+  border-right: 2px solid var(--surface-0);
+  overflow: hidden;
+}
+
+.stint-bar-segment:last-child {
+  border-right: none;
+}
+
+.stint-bar-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline: 8px;
+}

@@ -1,0 +1,120 @@
+.control-panel-form {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.control-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-block: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.control-panel-field:first-child {
+  padding-top: 0;
+}
+
+.control-panel-field label {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-caption);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.control-panel-field select,
+.control-panel-field input {
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-data);
+  padding: 10px 12px;
+}
+
+.control-panel-field select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-secondary) 50%),
+    linear-gradient(135deg, var(--ink-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) center,
+    calc(100% - 13px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+
+.control-panel-field select:focus-visible,
+.control-panel-field input:focus-visible {
+  outline: 2px solid var(--flag-safety-car);
+  outline-offset: 1px;
+}
+
+.control-panel-field select:disabled,
+.control-panel-field input:disabled {
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
+.control-panel-load-error {
+  margin-top: 16px;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  color: var(--tire-soft);
+}
+
+.control-panel-submit {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--flag-safety-car);
+  border: none;
+  border-radius: 2px;
+  color: var(--surface-0);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-h2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.control-panel-submit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--flag-safety-car) 88%, white);
+}
+
+.control-panel-submit:disabled {
+  background: var(--surface-2);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
+.control-panel-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--surface-0) 35%, transparent);
+  border-top-color: var(--surface-0);
+  border-radius: 50%;
+  animation: control-panel-spin 700ms linear infinite;
+}
+
+@keyframes control-panel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control-panel-spinner {
+    animation: none;
+  }
+}

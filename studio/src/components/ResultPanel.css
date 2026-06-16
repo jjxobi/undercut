@@ -1,0 +1,110 @@
+.result-panel {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 220px;
+}
+
+.result-panel-loading,
+.result-panel-empty {
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--ink-secondary);
+}
+
+.result-panel-loading {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.result-panel-loading p {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+}
+
+.result-panel-spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 2px solid var(--line);
+  border-top-color: var(--flag-safety-car);
+  border-radius: 50%;
+  animation: result-panel-spin 700ms linear infinite;
+}
+
+@keyframes result-panel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-panel-spinner {
+    animation: none;
+  }
+}
+
+.result-panel-empty-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-h2);
+  color: var(--ink-primary);
+  margin-bottom: 8px;
+}
+
+.result-panel-empty-body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink-secondary);
+  max-width: 42ch;
+}
+
+.result-panel-error {
+  border-left: 3px solid var(--tire-soft);
+  padding-left: 16px;
+}
+
+.result-panel-error-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-h2);
+  color: var(--tire-soft);
+  margin-bottom: 6px;
+}
+
+.result-panel-error-detail {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink-primary);
+}
+
+.result-panel-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.result-panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.result-panel-stat dt {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-caption);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.result-panel-stat dd {
+  font-family: var(--font-mono);
+  font-size: var(--text-data);
+  color: var(--ink-primary);
+}
