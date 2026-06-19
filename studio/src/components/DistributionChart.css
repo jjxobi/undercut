@@ -96,6 +96,11 @@
   fill-opacity: 0.85;
 }
 
+.distribution-chart-bar-separated {
+  stroke: var(--surface-1);
+  stroke-width: 2;
+}
+
 .distribution-chart-tooltip {
   position: absolute;
   top: 4px;

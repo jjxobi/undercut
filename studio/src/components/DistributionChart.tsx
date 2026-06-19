@@ -132,6 +132,48 @@ function DistributionChart({ deterministicCosts, stochasticCosts }: Distribution
               const detHeight = yScale(count);
               const stoHeight = yScale(stochasticCounts[index]);
               const isHovered = hoveredBin === index;
+
+              // Translucent fill alone can't separate two bars that land at close to the
+              // same height -- their overlap just reads as one blob. So whichever bar is
+              // shorter gets drawn last (on top) with a solid ring around it, cutting a
+              // clean edge out of the taller one behind it instead of blending into it.
+              const bothPresent = detHeight > 0 && stoHeight > 0;
+              const deterministicInFront = detHeight <= stoHeight;
+              const separatedClass = bothPresent ? " distribution-chart-bar-separated" : "";
+
+              const deterministicBar = (
+                <rect
+                  key="deterministic"
+                  data-testid={`distribution-bar-deterministic-${index}`}
+                  x={x}
+                  y={plotHeight - detHeight}
+                  width={barWidth}
+                  height={detHeight}
+                  rx={2}
+                  className={
+                    "distribution-chart-bar distribution-chart-bar-deterministic" +
+                    (isHovered ? " distribution-chart-bar-hovered" : "") +
+                    (deterministicInFront ? separatedClass : "")
+                  }
+                />
+              );
+              const stochasticBar = (
+                <rect
+                  key="stochastic"
+                  data-testid={`distribution-bar-stochastic-${index}`}
+                  x={x}
+                  y={plotHeight - stoHeight}
+                  width={barWidth}
+                  height={stoHeight}
+                  rx={2}
+                  className={
+                    "distribution-chart-bar distribution-chart-bar-stochastic" +
+                    (isHovered ? " distribution-chart-bar-hovered" : "") +
+                    (deterministicInFront ? "" : separatedClass)
+                  }
+                />
+              );
+
               return (
                 <g
                   key={index}
@@ -144,30 +186,17 @@ function DistributionChart({ deterministicCosts, stochasticCosts }: Distribution
                   onBlur={() => setHoveredBin(null)}
                 >
                   <rect x={x} y={0} width={slotWidth} height={plotHeight} className="distribution-chart-hit-area" />
-                  <rect
-                    data-testid={`distribution-bar-deterministic-${index}`}
-                    x={x}
-                    y={plotHeight - detHeight}
-                    width={barWidth}
-                    height={detHeight}
-                    rx={2}
-                    className={
-                      "distribution-chart-bar distribution-chart-bar-deterministic" +
-                      (isHovered ? " distribution-chart-bar-hovered" : "")
-                    }
-                  />
-                  <rect
-                    data-testid={`distribution-bar-stochastic-${index}`}
-                    x={x}
-                    y={plotHeight - stoHeight}
-                    width={barWidth}
-                    height={stoHeight}
-                    rx={2}
-                    className={
-                      "distribution-chart-bar distribution-chart-bar-stochastic" +
-                      (isHovered ? " distribution-chart-bar-hovered" : "")
-                    }
-                  />
+                  {deterministicInFront ? (
+                    <>
+                      {stochasticBar}
+                      {deterministicBar}
+                    </>
+                  ) : (
+                    <>
+                      {deterministicBar}
+                      {stochasticBar}
+                    </>
+                  )}
                 </g>
               );
             })}

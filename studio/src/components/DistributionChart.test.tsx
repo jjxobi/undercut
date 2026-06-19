@@ -85,4 +85,20 @@ describe("DistributionChart", () => {
     fireEvent.blur(getByTestId("distribution-bin-11"));
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
+
+  it("rings the shorter bar when both series land at nearly the same count in a bin", () => {
+    // Every value is identical (55) in both arrays, so the whole sample collapses
+    // into bin 0 with counts 30 and 29 -- the same near-tie shape that gets lost
+    // under plain translucent fill. Stochastic is the shorter one here, so it's
+    // the bar that needs the separator ring; deterministic (taller, behind) doesn't.
+    const closeCallDeterministic = Array(30).fill(55);
+    const closeCallStochastic = Array(29).fill(55);
+
+    const { getByTestId } = render(
+      <DistributionChart deterministicCosts={closeCallDeterministic} stochasticCosts={closeCallStochastic} />,
+    );
+
+    expect(getByTestId("distribution-bar-stochastic-0")).toHaveClass("distribution-chart-bar-separated");
+    expect(getByTestId("distribution-bar-deterministic-0")).not.toHaveClass("distribution-chart-bar-separated");
+  });
 });
