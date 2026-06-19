@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchCircuits } from "../api/client";
-import type { CircuitInfo, StrategyRequest } from "../api/types";
+import type { CircuitInfo, StrategyRequest, StrategySelection } from "../api/types";
 import "./ControlPanel.css";
 
 const MIN_RACE_LENGTH = 1;
@@ -14,6 +14,7 @@ const FALLBACK_RACE_LENGTH = 57;
 interface ControlPanelProps {
   onSolve: (request: StrategyRequest) => void;
   isLoading: boolean;
+  onSelectionChange: (selection: StrategySelection) => void;
 }
 
 function formatCircuitLabel(circuitId: string): string {
@@ -26,7 +27,7 @@ function formatCircuitLabel(circuitId: string): string {
 
 type LoadState = "loading" | "ready" | "error";
 
-function ControlPanel({ onSolve, isLoading }: ControlPanelProps) {
+function ControlPanel({ onSolve, isLoading, onSelectionChange }: ControlPanelProps) {
   const [circuits, setCircuits] = useState<CircuitInfo[]>([]);
   const [eras, setEras] = useState<string[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
@@ -46,14 +47,21 @@ function ControlPanel({ onSolve, isLoading }: ControlPanelProps) {
         setCircuits(response.circuits);
         setEras(response.eras);
         const firstCircuit = response.circuits[0];
+        const resolvedRaceLength = firstCircuit?.default_race_length ?? FALLBACK_RACE_LENGTH;
+        const resolvedEra = response.eras[0] ?? "";
         if (firstCircuit) {
           setCircuitId(firstCircuit.circuit_id);
-          setRaceLength(firstCircuit.default_race_length);
+          setRaceLength(resolvedRaceLength);
         }
         if (response.eras[0]) {
-          setEra(response.eras[0]);
+          setEra(resolvedEra);
         }
         setLoadState("ready");
+        onSelectionChange({
+          circuit_id: firstCircuit?.circuit_id ?? "",
+          era: resolvedEra,
+          race_length: resolvedRaceLength,
+        });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -69,9 +77,21 @@ function ControlPanel({ onSolve, isLoading }: ControlPanelProps) {
   function handleCircuitChange(nextCircuitId: string) {
     setCircuitId(nextCircuitId);
     const match = circuits.find((circuit) => circuit.circuit_id === nextCircuitId);
+    const nextRaceLength = match?.default_race_length ?? raceLength;
     if (match) {
-      setRaceLength(match.default_race_length);
+      setRaceLength(nextRaceLength);
     }
+    onSelectionChange({ circuit_id: nextCircuitId, era, race_length: nextRaceLength });
+  }
+
+  function handleEraChange(nextEra: string) {
+    setEra(nextEra);
+    onSelectionChange({ circuit_id: circuitId, era: nextEra, race_length: raceLength });
+  }
+
+  function handleRaceLengthChange(nextRaceLength: number) {
+    setRaceLength(nextRaceLength);
+    onSelectionChange({ circuit_id: circuitId, era, race_length: nextRaceLength });
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -112,7 +132,7 @@ function ControlPanel({ onSolve, isLoading }: ControlPanelProps) {
         <select
           id="era-select"
           value={era}
-          onChange={(event) => setEra(event.target.value)}
+          onChange={(event) => handleEraChange(event.target.value)}
           disabled={formDisabled}
           required
         >
@@ -133,7 +153,7 @@ function ControlPanel({ onSolve, isLoading }: ControlPanelProps) {
           min={MIN_RACE_LENGTH}
           max={MAX_RACE_LENGTH}
           value={raceLength}
-          onChange={(event) => setRaceLength(Number(event.target.value))}
+          onChange={(event) => handleRaceLengthChange(Number(event.target.value))}
           disabled={formDisabled}
           required
         />

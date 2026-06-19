@@ -1,0 +1,147 @@
+.distribution-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distribution-chart-legend {
+  display: flex;
+  gap: 20px;
+}
+
+.distribution-chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  color: var(--ink-secondary);
+}
+
+.distribution-chart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.distribution-chart-swatch-deterministic {
+  background: var(--plan-deterministic);
+}
+
+.distribution-chart-swatch-stochastic {
+  background: var(--plan-stochastic);
+}
+
+.distribution-chart-canvas {
+  position: relative;
+}
+
+.distribution-chart-svg {
+  width: 100%;
+  height: auto;
+}
+
+.distribution-chart-gridline {
+  stroke: var(--ink-muted);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.distribution-chart-axis-line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.distribution-chart-axis-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--ink-secondary);
+}
+
+.distribution-chart-axis-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  fill: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+.distribution-chart-hit-area {
+  fill: transparent;
+}
+
+.distribution-chart-bin {
+  cursor: pointer;
+}
+
+.distribution-chart-bin:focus {
+  outline: none;
+}
+
+.distribution-chart-bar {
+  fill-opacity: 0.55;
+  transition: fill-opacity 120ms ease-out;
+}
+
+.distribution-chart-bar-deterministic {
+  fill: var(--plan-deterministic);
+}
+
+.distribution-chart-bar-stochastic {
+  fill: var(--plan-stochastic);
+}
+
+.distribution-chart-bar-hovered {
+  fill-opacity: 0.85;
+}
+
+.distribution-chart-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  min-width: 160px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.distribution-chart-tooltip-range {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink-secondary);
+  margin-bottom: 6px;
+}
+
+.distribution-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  color: var(--ink-primary);
+}
+
+.distribution-chart-tooltip-row strong {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  color: var(--ink-primary);
+}
+
+.distribution-chart-tooltip-key {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.distribution-chart-tooltip-key-deterministic {
+  background: var(--plan-deterministic);
+}
+
+.distribution-chart-tooltip-key-stochastic {
+  background: var(--plan-stochastic);
+}

@@ -25,7 +25,7 @@ afterEach(() => {
 describe("ControlPanel", () => {
   it("populates the circuit and era selects from the real fetched list", async () => {
     mockedFetchCircuits.mockResolvedValue(circuitsResponse);
-    render(<ControlPanel onSolve={vi.fn()} isLoading={false} />);
+    render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={vi.fn()} />);
 
     const circuitSelect = await screen.findByLabelText("Circuit");
     expect(within(circuitSelect).getAllByRole("option").map((option) => (option as HTMLOptionElement).value)).toEqual(
@@ -40,7 +40,7 @@ describe("ControlPanel", () => {
 
   it("prefills race length from the selected circuit's real default", async () => {
     mockedFetchCircuits.mockResolvedValue(circuitsResponse);
-    render(<ControlPanel onSolve={vi.fn()} isLoading={false} />);
+    render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={vi.fn()} />);
 
     await screen.findByLabelText("Circuit");
     expect(screen.getByLabelText("Race length (laps)")).toHaveValue(57);
@@ -52,7 +52,7 @@ describe("ControlPanel", () => {
   it("calls onSolve with the exact assembled request on submit", async () => {
     mockedFetchCircuits.mockResolvedValue(circuitsResponse);
     const onSolve = vi.fn();
-    render(<ControlPanel onSolve={onSolve} isLoading={false} />);
+    render(<ControlPanel onSolve={onSolve} isLoading={false} onSelectionChange={vi.fn()} />);
 
     await screen.findByLabelText("Circuit");
     fireEvent.change(screen.getByLabelText("Circuit"), { target: { value: "spa_francorchamps" } });
@@ -71,16 +71,37 @@ describe("ControlPanel", () => {
 
   it("shows a real loading state and disables the button while solving", async () => {
     mockedFetchCircuits.mockResolvedValue(circuitsResponse);
-    render(<ControlPanel onSolve={vi.fn()} isLoading />);
+    render(<ControlPanel onSolve={vi.fn()} isLoading onSelectionChange={vi.fn()} />);
 
     await screen.findByLabelText("Circuit");
     const button = screen.getByRole("button", { name: /Solving/ });
     expect(button).toBeDisabled();
   });
 
+  it("tells its parent the current selection on mount and again after changing the circuit", async () => {
+    mockedFetchCircuits.mockResolvedValue(circuitsResponse);
+    const onSelectionChange = vi.fn();
+    render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={onSelectionChange} />);
+
+    await screen.findByLabelText("Circuit");
+    expect(onSelectionChange).toHaveBeenCalledWith({
+      circuit_id: "bahrain",
+      era: "2018-2021 aero",
+      race_length: 57,
+    });
+
+    onSelectionChange.mockClear();
+    fireEvent.change(screen.getByLabelText("Circuit"), { target: { value: "spa_francorchamps" } });
+    expect(onSelectionChange).toHaveBeenCalledWith({
+      circuit_id: "spa_francorchamps",
+      era: "2018-2021 aero",
+      race_length: 44,
+    });
+  });
+
   it("surfaces the backend's real error message when circuits fail to load", async () => {
     mockedFetchCircuits.mockRejectedValue(new Error("GET /circuits failed (503): degradation_coefficients.csv not found"));
-    render(<ControlPanel onSolve={vi.fn()} isLoading={false} />);
+    render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={vi.fn()} />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("degradation_coefficients.csv not found");
     expect(screen.getByRole("button", { name: "Solve" })).toBeDisabled();

@@ -12,6 +12,12 @@ export interface CircuitsResponse {
   eras: string[];
 }
 
+export interface StrategySelection {
+  circuit_id: string;
+  era: string;
+  race_length: number;
+}
+
 export interface StrategyRequest {
   circuit_id: string;
   era: string;
