@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { compareStrategies, solveStrategy } from "./api/client";
-import type { CompareRequest, CompareResponse, StrategyRequest, StrategyResponse, StrategySelection } from "./api/types";
+import { compareStrategies, fetchEvaluationSummary, solveStrategy } from "./api/client";
+import type {
+  CompareRequest,
+  CompareResponse,
+  EvaluationSummaryResponse,
+  StrategyRequest,
+  StrategyResponse,
+  StrategySelection,
+} from "./api/types";
 import ComparePanel from "./components/ComparePanel";
 import ControlPanel from "./components/ControlPanel";
+import HeadlineStat from "./components/HeadlineStat";
 import ResultPanel from "./components/ResultPanel";
 import "./App.css";
 
@@ -16,6 +24,32 @@ function App() {
   const [compareResult, setCompareResult] = useState<CompareResponse | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+
+  const [evaluationSummary, setEvaluationSummary] = useState<EvaluationSummaryResponse | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchEvaluationSummary()
+      .then((result) => {
+        if (cancelled) return;
+        setEvaluationSummary(result);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setSummaryError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsSummaryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSolve(request: StrategyRequest) {
     setIsLoading(true);
@@ -50,9 +84,10 @@ function App() {
         <span className="eyebrow">Strategy Studio</span>
       </header>
       <main className="shell-main">
-        <section className="panel control-panel" aria-label="Control panel">
+        <details className="panel control-panel" open>
+          <summary className="control-panel-summary">Control panel</summary>
           <ControlPanel onSolve={handleSolve} isLoading={isLoading} onSelectionChange={setCurrentSelection} />
-        </section>
+        </details>
         <section className="panel results-panel" aria-label="Recommended plan">
           <ResultPanel
             result={strategyResult}
@@ -68,8 +103,10 @@ function App() {
             onCompare={handleCompare}
           />
         </section>
-        <section className="panel headline-panel" aria-label="Headline metric"></section>
       </main>
+      <section className="panel headline-panel" aria-label="Headline metric">
+        <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
+      </section>
     </div>
   );
 }

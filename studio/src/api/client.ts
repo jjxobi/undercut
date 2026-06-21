@@ -27,8 +27,10 @@ async function readErrorDetail(response: Response): Promise<string> {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, init);
   if (!response.ok) {
-    const detail = await readErrorDetail(response);
-    throw new Error(`${init?.method ?? "GET"} ${path} failed (${response.status}): ${detail}`);
+    // Panels show this message to the user as-is, so it stays in the
+    // backend's own plain words rather than a route/status prefix meant
+    // for a terminal.
+    throw new Error(await readErrorDetail(response));
   }
   return (await response.json()) as T;
 }

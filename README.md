@@ -20,3 +20,27 @@ see whether hedging actually paid off.
     .venv\Scripts\activate
     pip install -e ".[dev]"
     pytest
+
+## strategy studio
+
+`studio/` is a small React frontend for the optimizer above -- pick a
+circuit, era, and race length, get back a live pit strategy, and see how
+that recommendation holds up against a genuinely uncertain race (deterministic
+vs. stochastic, priced on scenarios neither one optimized against). It also
+shows the project's headline number: how much of the value a perfect,
+after-the-fact strategy would have captured, and how much of that the policy
+actually got.
+
+It talks to the API above, not to anything bundled with it, so both need to
+be running:
+
+    uvicorn api.main:app
+
+then, in a second terminal:
+
+    cd studio
+    npm install
+    npm run dev
+
+The studio defaults to an API at `localhost:8000`; set `VITE_API_BASE_URL`
+if you're running the API somewhere else.
