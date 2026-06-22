@@ -80,7 +80,7 @@ function App() {
   return (
     <div className="shell">
       <header className="shell-header">
-        <span className="wordmark">DISPATCH</span>
+        <h1 className="wordmark">DISPATCH</h1>
         <span className="eyebrow">Strategy Studio</span>
       </header>
       <main className="shell-main">

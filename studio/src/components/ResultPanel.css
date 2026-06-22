@@ -13,13 +13,21 @@
   color: var(--ink-secondary);
 }
 
-.result-panel-loading {
+.result-panel-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-h2);
+  color: var(--ink-primary);
+}
+
+.result-panel-loading-body {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
 }
 
-.result-panel-loading p {
+.result-panel-loading-body p {
   font-family: var(--font-body);
   font-size: var(--text-body);
 }

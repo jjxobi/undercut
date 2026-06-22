@@ -17,8 +17,11 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (isLoading) {
     return (
       <div className="result-panel result-panel-loading" role="status">
-        <span className="result-panel-spinner" aria-hidden="true" />
-        <p>Solving your recommended strategy&hellip;</p>
+        <h2 className="result-panel-heading">Recommended plan</h2>
+        <div className="result-panel-loading-body">
+          <span className="result-panel-spinner" aria-hidden="true" />
+          <p>Solving your recommended strategy&hellip;</p>
+        </div>
       </div>
     );
   }
@@ -26,6 +29,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (error) {
     return (
       <div className="result-panel result-panel-error" role="alert">
+        <h2 className="result-panel-heading">Recommended plan</h2>
         <p className="result-panel-error-heading">Solve failed</p>
         <p className="result-panel-error-detail">{error}</p>
       </div>
@@ -35,6 +39,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (!result) {
     return (
       <div className="result-panel result-panel-empty">
+        <h2 className="result-panel-heading">Recommended plan</h2>
         <p className="result-panel-empty-heading">No plan solved yet</p>
         <p className="result-panel-empty-body">
           Choose a circuit and race length on the left, then solve to see a recommended pit strategy here.
@@ -49,6 +54,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
 
   return (
     <div className="result-panel result-panel-populated">
+      <h2 className="result-panel-heading">Recommended plan</h2>
       <StintBar
         key={stintBarKey}
         compounds={result.compounds}
@@ -63,7 +69,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
           <dd>{result.pit_laps.length > 0 ? result.pit_laps.join(", ") : "none"}</dd>
         </div>
         <div className="result-panel-stat">
-          <dt>Expected race time</dt>
+          <dt>Expected time lost to tyres and pit stops</dt>
           <dd>{formatCost(result.expected_cost_seconds)}</dd>
         </div>
         <div className="result-panel-stat">
