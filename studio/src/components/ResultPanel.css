@@ -69,11 +69,6 @@
   max-width: 42ch;
 }
 
-.result-panel-error {
-  border-left: 3px solid var(--tire-soft);
-  padding-left: 16px;
-}
-
 .result-panel-error-heading {
   font-family: var(--font-display);
   font-weight: 600;

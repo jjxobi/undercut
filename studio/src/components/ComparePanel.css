@@ -91,11 +91,9 @@
 }
 
 .compare-panel-error {
-  border-left: 3px solid var(--tire-soft);
-  padding-left: 16px;
   font-family: var(--font-body);
   font-size: var(--text-body);
-  color: var(--ink-primary);
+  color: var(--tire-soft);
 }
 
 .compare-panel-result {

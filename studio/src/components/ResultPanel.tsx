@@ -28,7 +28,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
 
   if (error) {
     return (
-      <div className="result-panel result-panel-error" role="alert">
+      <div className="result-panel" role="alert">
         <h2 className="result-panel-heading">Recommended plan</h2>
         <p className="result-panel-error-heading">Solve failed</p>
         <p className="result-panel-error-detail">{error}</p>
