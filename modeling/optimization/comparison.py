@@ -50,7 +50,7 @@ def compare_deterministic_vs_stochastic(
     if deterministic_result is None or stochastic_result is None:
         raise ValueError(
             f"no candidate compound sequence fits a {race_length}-lap race "
-            f"(every stint needs at least {solver.MIN_STINT_LENGTH} laps) -- try a longer --race-length"
+            f"(every stint needs at least {solver.MIN_STINT_LENGTH} laps) -- try a longer race length"
         )
 
     # the stochastic plan was optimized against optimization_scenarios, so
