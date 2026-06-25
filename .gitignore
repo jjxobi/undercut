@@ -6,7 +6,6 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 data/raw/
-data/processed/
 data/*.log
 .env
 node_modules/
