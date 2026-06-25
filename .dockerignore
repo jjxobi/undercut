@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+studio/
+notebooks/
+tests/
+data/raw/
+*.egg-info/
