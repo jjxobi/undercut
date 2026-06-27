@@ -42,7 +42,7 @@ Averaged across those 652 driver-races:
 - so the policy captured about **63%** of the value that hindsight had
   available to give
 
-That's the number the studio's headline stat and `/evaluation/regret-summary`
+That's the number the studio's headline stat and `/evaluation/summary`
 are built around. It's not "the optimizer is nearly as good as knowing the
 future" -- it's "committing to a plan that hedges against safety-car risk,
 instead of just running what everyone else runs, recovers most of the gap
