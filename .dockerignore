@@ -10,4 +10,7 @@ studio/
 notebooks/
 tests/
 data/raw/
+data/*.log
 *.egg-info/
+build/
+dist/
