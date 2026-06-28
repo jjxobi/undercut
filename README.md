@@ -102,6 +102,11 @@ between the average driver-race and the best possible one."
   races run on strategies outside that set (extra splash-and-dash stops,
   five-stop wet races, whatever) are dropped from the regret report
   entirely, not scored against it.
+- the regret numbers themselves (the 16.77s / 63% headline) are strictly a
+  tyre-and-pit-stop time cost. they don't fold in the field-interaction
+  model's own calibration error noted above, so a strategy that looks cheap
+  in seconds could still cost or gain positions in ways the regret report
+  doesn't try to capture.
 - the API has no authentication and no rate limiting. fine for a small
   portfolio deployment serving read-mostly, precomputed-and-cached results;
   not something to point at production traffic.
@@ -151,7 +156,8 @@ the repo is set up to deploy, though nothing is deployed from it yet:
 - `render.yaml` is a Render blueprint pointing at that Dockerfile with a
   `/health` check.
 - `studio/vercel.json` builds and serves the studio frontend as a static
-  site (`npm run build`, `dist/`).
+  site (`npm run build`, `dist/`) -- note it only takes effect if the
+  Vercel project's "Root Directory" setting is also pointed at `studio/`.
 - `.github/workflows/refresh.yml` re-runs `scripts/refresh.py` on a weekly
   cron and commits `data/processed/` if anything changed, so a deployed
   Render instance can pick up a fresh fit on redeploy.
