@@ -105,8 +105,14 @@ function App() {
         </section>
       </main>
       <section className="panel headline-panel" aria-label="Headline metric">
-        <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
+        <div className="headline-panel-inner">
+          <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
+        </div>
       </section>
+      <footer className="shell-footer">
+        <span>Dispatch — a race-strategy portfolio project</span>
+        <span className="shell-footer-mono">CP-SAT solver · real circuit data</span>
+      </footer>
     </div>
   );
 }
