@@ -13,6 +13,12 @@
   gap: 20px;
 }
 
+@media (max-width: 720px) {
+  .compare-panel-header {
+    flex-wrap: wrap;
+  }
+}
+
 .compare-panel-heading-group {
   display: flex;
   flex-direction: column;
@@ -22,9 +28,10 @@
 .compare-panel-heading {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: var(--text-h2);
-  letter-spacing: 0.02em;
-  color: var(--ink-primary);
+  font-size: var(--text-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
 }
 
 .compare-panel-subheading {
@@ -40,21 +47,26 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 2px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-1);
   color: var(--ink-primary);
   font-family: var(--font-body);
   font-weight: 500;
   font-size: var(--text-caption);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .compare-panel-button:hover:not(:disabled) {
-  border-color: var(--plan-stochastic);
+  border-color: var(--flag-safety-car);
+  background: color-mix(in srgb, var(--flag-safety-car) 8%, transparent);
+}
+
+.compare-panel-button:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .compare-panel-button:disabled {
@@ -99,7 +111,19 @@
 .compare-panel-result {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-4);
+  animation: compare-panel-enter var(--dur-2) var(--ease-swift) both;
+}
+
+@keyframes compare-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .compare-panel-stats {
@@ -116,15 +140,17 @@
 .compare-panel-stat dt {
   font-family: var(--font-body);
   font-weight: 500;
-  font-size: var(--text-caption);
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-secondary);
+  color: var(--ink-muted);
 }
 
 .compare-panel-stat dd {
   font-family: var(--font-mono);
-  font-size: var(--text-data);
+  font-weight: 500;
+  font-size: var(--text-data-lg);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-primary);
 }
 
@@ -133,4 +159,14 @@
   font-size: var(--text-body);
   color: var(--ink-primary);
   max-width: 64ch;
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--ink-muted);
+}
+
+.compare-panel-gap-hedge {
+  border-left-color: var(--plan-stochastic);
+}
+
+.compare-panel-gap-commit {
+  border-left-color: var(--plan-deterministic);
 }

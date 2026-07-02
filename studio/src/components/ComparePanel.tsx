@@ -35,6 +35,14 @@ function describeGap(result: CompareResponse): string {
 }
 
 function ComparePanel({ selection, result, isLoading, error, onCompare }: ComparePanelProps) {
+  const verdictClass = result
+    ? !result.gap_is_significant
+      ? "compare-panel-gap-neutral"
+      : result.gap_seconds > 0
+        ? "compare-panel-gap-hedge"
+        : "compare-panel-gap-commit"
+    : "";
+
   function handleCheckConfidence() {
     if (!selection) return;
     onCompare({
@@ -104,7 +112,7 @@ function ComparePanel({ selection, result, isLoading, error, onCompare }: Compar
             </div>
           </dl>
 
-          <p className="compare-panel-gap">{describeGap(result)}</p>
+          <p className={`compare-panel-gap ${verdictClass}`}>{describeGap(result)}</p>
         </div>
       )}
     </div>
