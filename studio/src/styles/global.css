@@ -11,12 +11,16 @@ html {
 }
 
 body {
-  background: var(--surface-0);
+  background:
+    radial-gradient(1100px 520px at 50% -180px, #11151c 0%, rgba(17, 21, 28, 0) 70%),
+    var(--surface-0);
+  background-attachment: fixed;
   color: var(--ink-primary);
   font-family: var(--font-body);
   font-size: var(--text-body);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 img,
@@ -30,10 +34,16 @@ input,
 select {
   font: inherit;
   color: inherit;
+  transition: background-color var(--dur-1) var(--ease-swift), border-color var(--dur-1) var(--ease-swift),
+    color var(--dur-1) var(--ease-swift), box-shadow var(--dur-1) var(--ease-swift),
+    transform var(--dur-1) var(--ease-swift);
 }
 
 a {
   color: inherit;
+  transition: background-color var(--dur-1) var(--ease-swift), border-color var(--dur-1) var(--ease-swift),
+    color var(--dur-1) var(--ease-swift), box-shadow var(--dur-1) var(--ease-swift),
+    transform var(--dur-1) var(--ease-swift);
 }
 
 ul,
@@ -44,6 +54,14 @@ ol {
 :focus-visible {
   outline: 2px solid var(--flag-safety-car);
   outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--flag-safety-car) 32%, transparent);
+}
+
+html {
+  scrollbar-color: var(--surface-3) var(--surface-0);
 }
 
 @media (prefers-reduced-motion: reduce) {
