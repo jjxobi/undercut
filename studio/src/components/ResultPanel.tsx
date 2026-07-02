@@ -18,10 +18,8 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
     return (
       <div className="result-panel result-panel-loading" role="status">
         <h2 className="result-panel-heading">Recommended plan</h2>
-        <div className="result-panel-loading-body">
-          <span className="result-panel-spinner" aria-hidden="true" />
-          <p>Solving your recommended strategy&hellip;</p>
-        </div>
+        <div className="result-panel-sweep" aria-hidden="true" />
+        <p className="result-panel-loading-text">Solving your recommended strategy&hellip;</p>
       </div>
     );
   }
@@ -40,6 +38,20 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
     return (
       <div className="result-panel result-panel-empty">
         <h2 className="result-panel-heading">Recommended plan</h2>
+        <div className="result-panel-ghost" aria-hidden="true">
+          <div
+            className="result-panel-ghost-segment"
+            style={{ width: "38%", borderColor: "color-mix(in srgb, var(--tire-soft) 40%, transparent)" }}
+          />
+          <div
+            className="result-panel-ghost-segment"
+            style={{ width: "34%", borderColor: "color-mix(in srgb, var(--tire-medium) 40%, transparent)" }}
+          />
+          <div
+            className="result-panel-ghost-segment"
+            style={{ width: "28%", borderColor: "color-mix(in srgb, var(--tire-hard) 40%, transparent)" }}
+          />
+        </div>
         <p className="result-panel-empty-heading">No plan solved yet</p>
         <p className="result-panel-empty-body">
           Choose a circuit and race length on the left, then solve to see a recommended pit strategy here.
