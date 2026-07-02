@@ -18,9 +18,8 @@ interface StintBarProps {
 function buildRulerTicks(raceLength: number): { lap: number; isMajor: boolean }[] {
   if (raceLength <= 0) return [];
   const major = raceLength < 20 ? 5 : 10;
-  const minorStep = raceLength < 20 ? 5 : 5;
   const ticks: { lap: number; isMajor: boolean }[] = [];
-  for (let lap = 0; lap <= raceLength; lap += minorStep) {
+  for (let lap = 0; lap <= raceLength; lap += 5) {
     ticks.push({ lap, isMajor: lap % major === 0 || lap === raceLength });
   }
   if (ticks[ticks.length - 1]?.lap !== raceLength) {
