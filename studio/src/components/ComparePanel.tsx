@@ -43,6 +43,9 @@ function ComparePanel({ selection, result, isLoading, error, onCompare }: Compar
         : "compare-panel-gap-commit"
     : "";
 
+  const deltaClass =
+    result && result.gap_is_significant && result.gap_seconds > 0 ? " compare-panel-delta-gain" : "";
+
   function handleCheckConfidence() {
     if (!selection) return;
     onCompare({
@@ -58,7 +61,7 @@ function ComparePanel({ selection, result, isLoading, error, onCompare }: Compar
     <div className="compare-panel">
       <div className="compare-panel-header">
         <div className="compare-panel-heading-group">
-          <h2 className="compare-panel-heading">How confident should you be?</h2>
+          <h2 className="compare-panel-heading blade-label">How confident should you be?</h2>
           <p className="compare-panel-subheading">
             Solves the plan again assuming no safety car, hedges a second plan across{" "}
             {DEFAULT_N_SCENARIOS} sampled scenarios, then prices both on a held-out set neither ever saw.
@@ -105,7 +108,7 @@ function ComparePanel({ selection, result, isLoading, error, onCompare }: Compar
           <dl className="compare-panel-stats">
             <div className="compare-panel-stat">
               <dt>Gap on held-out scenarios</dt>
-              <dd>
+              <dd className={`compare-panel-delta${deltaClass}`}>
                 {result.gap_seconds >= 0 ? "+" : ""}
                 {formatSeconds(result.gap_seconds)} &plusmn; {formatSeconds(result.gap_standard_error)}
               </dd>

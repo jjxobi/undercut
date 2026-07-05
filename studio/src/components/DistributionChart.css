@@ -103,7 +103,7 @@
 }
 
 .distribution-chart-bar-separated {
-  stroke: var(--surface-1);
+  stroke: var(--surface-0);
   stroke-width: 2;
 }
 
