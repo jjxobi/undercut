@@ -26,12 +26,17 @@
   color: var(--ink-secondary);
 }
 
-.stint-bar-pit-notch {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid var(--flag-safety-car);
+.stint-bar-pitline {
+  position: absolute;
+  top: 20px;                        /* below the label row */
+  bottom: 20px;                     /* through the track, into the ruler gap */
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: color-mix(in srgb, var(--flag-safety-car) 60%, transparent);
+  pointer-events: none;
+  z-index: 1;
+  animation: stint-meta-fade var(--dur-2) var(--ease-swift) both;
+  animation-delay: 480ms;
 }
 
 .stint-bar-reveal {
@@ -41,7 +46,7 @@
 .stint-bar-track {
   display: flex;
   width: 100%;
-  height: 64px;
+  height: 88px;
   border-radius: var(--radius-1);
   overflow: hidden;
   box-shadow: var(--shadow-well);
@@ -75,6 +80,9 @@
 
 .stint-bar-label {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   font-weight: 600;
@@ -83,6 +91,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding-inline: 8px;
+}
+
+.stint-bar-stint-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 1px;
+  font-size: 10px;
+  font-weight: 600;
 }
 
 @keyframes stint-segment-reveal {
@@ -136,7 +157,8 @@
 @media (prefers-reduced-motion: reduce) {
   .stint-bar-segment,
   .stint-bar-pits,
-  .stint-bar-ruler {
+  .stint-bar-ruler,
+  .stint-bar-pitline {
     animation: none;
     clip-path: inset(0 0 0 0);
     opacity: 1;

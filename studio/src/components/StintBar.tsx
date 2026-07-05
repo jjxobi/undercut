@@ -42,10 +42,16 @@ function StintBar({ compounds, stintLengths, pitLaps, raceLength }: StintBarProp
         {pitLaps.map((lap) => (
           <span key={lap} className="stint-bar-pit" style={{ left: `${(lap / raceLength) * 100}%` }}>
             <span className="stint-bar-pit-label">L{lap}</span>
-            <span className="stint-bar-pit-notch" />
           </span>
         ))}
       </div>
+      {pitLaps.map((lap) => (
+        <span
+          key={`pitline-${lap}`}
+          className="stint-bar-pitline"
+          style={{ left: `${(lap / raceLength) * 100}%` }}
+        />
+      ))}
       <div className="stint-bar-reveal">
         <div className="stint-bar-track">
           {compounds.map((compound, index) => {
@@ -66,6 +72,9 @@ function StintBar({ compounds, stintLengths, pitLaps, raceLength }: StintBarProp
                 }}
               >
                 <span className="stint-bar-label">
+                  <span className="stint-bar-stint-number" aria-hidden="true">
+                    {index + 1}
+                  </span>
                   {compound} &middot; {length} laps
                 </span>
               </div>
