@@ -11,10 +11,7 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(1100px 520px at 50% -180px, #11151c 0%, rgba(17, 21, 28, 0) 70%),
-    var(--surface-0);
-  background-attachment: fixed;
+  background: var(--surface-rail);
   color: var(--ink-primary);
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -73,4 +70,25 @@ html {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.blade-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.blade-label::before {
+  content: "";
+  width: 5px;
+  height: 13px;
+  flex-shrink: 0;
+  background: var(--blade-color, var(--flag-safety-car));
+  transform: skewX(-12deg);
 }
