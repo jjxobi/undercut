@@ -13,15 +13,6 @@
   color: var(--ink-secondary);
 }
 
-.result-panel-heading {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--text-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-}
-
 .result-panel-sweep {
   height: 88px;
   border-radius: var(--radius-1);
