@@ -17,7 +17,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (isLoading) {
     return (
       <div className="result-panel result-panel-loading" role="status">
-        <h2 className="result-panel-heading">Recommended plan</h2>
+        <h2 className="result-panel-heading blade-label">Recommended plan</h2>
         <div className="result-panel-sweep" aria-hidden="true" />
         <p className="result-panel-loading-text">Solving your recommended strategy&hellip;</p>
       </div>
@@ -27,7 +27,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (error) {
     return (
       <div className="result-panel" role="alert">
-        <h2 className="result-panel-heading">Recommended plan</h2>
+        <h2 className="result-panel-heading blade-label">Recommended plan</h2>
         <p className="result-panel-error-heading">Solve failed</p>
         <p className="result-panel-error-detail">{error}</p>
       </div>
@@ -37,7 +37,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
   if (!result) {
     return (
       <div className="result-panel result-panel-empty">
-        <h2 className="result-panel-heading">Recommended plan</h2>
+        <h2 className="result-panel-heading blade-label">Recommended plan</h2>
         <div className="result-panel-ghost" aria-hidden="true">
           <div
             className="result-panel-ghost-segment"
@@ -66,7 +66,7 @@ function ResultPanel({ result, pitLossSeconds, isLoading, error }: ResultPanelPr
 
   return (
     <div className="result-panel result-panel-populated">
-      <h2 className="result-panel-heading">Recommended plan</h2>
+      <h2 className="result-panel-heading blade-label">Recommended plan</h2>
       <StintBar
         key={stintBarKey}
         compounds={result.compounds}
