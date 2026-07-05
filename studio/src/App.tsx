@@ -77,18 +77,30 @@ function App() {
     }
   }
 
+  const sessionStatus =
+    error || compareError || summaryError ? "fault" : isLoading || isComparing ? "solving" : "ready";
+
   return (
     <div className="shell">
       <header className="shell-header">
         <h1 className="wordmark">DISPATCH</h1>
         <span className="eyebrow">Strategy Studio</span>
+        <span className={`session-status session-status-${sessionStatus}`}>
+          <span className="session-status-dot" aria-hidden="true" />
+          {sessionStatus === "fault" ? "Fault" : sessionStatus === "solving" ? "Solving" : "Ready"}
+        </span>
       </header>
+
+      <section className="headline-band" aria-label="Headline metric">
+        <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
+      </section>
+
       <main className="shell-main">
-        <details className="panel control-panel" open>
-          <summary className="control-panel-summary">Control panel</summary>
+        <details className="control-rail" open>
+          <summary className="control-panel-summary blade-label">Race setup</summary>
           <ControlPanel onSolve={handleSolve} isLoading={isLoading} onSelectionChange={setCurrentSelection} />
         </details>
-        <section className="panel results-panel" aria-label="Recommended plan">
+        <section className="results-zone" aria-label="Recommended plan">
           <ResultPanel
             result={strategyResult}
             pitLossSeconds={strategyResult?.pit_loss_seconds ?? 0}
@@ -104,11 +116,7 @@ function App() {
           />
         </section>
       </main>
-      <section className="panel headline-panel" aria-label="Headline metric">
-        <div className="headline-panel-inner">
-          <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
-        </div>
-      </section>
+
       <footer className="shell-footer">
         <span>Dispatch — a race-strategy portfolio project</span>
         <span className="shell-footer-mono">CP-SAT solver · real circuit data</span>
