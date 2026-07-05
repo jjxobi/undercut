@@ -85,31 +85,32 @@ function HeadlineStat({ summary, isLoading, error }: HeadlineStatProps) {
 
   return (
     <div className="headline-stat headline-stat-populated">
-      <p className="headline-stat-eyebrow">Perfect information was worth</p>
-
-      <div className="headline-stat-readout">
-        <span className="headline-stat-number" aria-hidden="true">
-          {displayValue}
-        </span>
-        <span className="headline-stat-unit" aria-hidden="true">
-          {unitLabel}
-        </span>
-        <span className="headline-stat-sr-value">
-          {finalValue} {unitLabel}
-        </span>
+      <div className="headline-stat-main">
+        <p className="headline-stat-eyebrow blade-label">Perfect information was worth</p>
+        <div className="headline-stat-readout">
+          <span className="headline-stat-number" aria-hidden="true">
+            {displayValue}
+          </span>
+          <span className="headline-stat-unit" aria-hidden="true">
+            {unitLabel}
+          </span>
+          <span className="headline-stat-sr-value">
+            {finalValue} {unitLabel}
+          </span>
+        </div>
       </div>
-
-      <p className="headline-stat-caption">
-        {capturedIsReadable ? (
-          <>
-            the policy captured <strong>{capturedPercent}%</strong> of that value
-          </>
-        ) : (
-          "the policy's captured share isn't well defined against this baseline"
-        )}
-      </p>
-
-      <p className="headline-stat-footnote">{summary.driver_races.toLocaleString()} real driver-races</p>
+      <div className="headline-stat-aside">
+        <p className="headline-stat-caption">
+          {capturedIsReadable ? (
+            <>
+              the policy captured <strong>{capturedPercent}%</strong> of that value
+            </>
+          ) : (
+            "the policy's captured share isn't well defined against this baseline"
+          )}
+        </p>
+        <p className="headline-stat-footnote">{summary.driver_races.toLocaleString()} real driver-races</p>
+      </div>
     </div>
   );
 }

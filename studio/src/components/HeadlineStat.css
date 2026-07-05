@@ -1,65 +1,39 @@
 .headline-stat {
-  padding: var(--space-7) var(--space-6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  text-align: center;
+  position: relative;   /* above the band's ::before/::after overlays */
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--space-6);
+  padding: var(--space-7) clamp(24px, 5vw, 72px) var(--space-6);
 }
 
 .headline-stat-eyebrow {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+  --blade-color: var(--delta-best);
+  margin-bottom: var(--space-3);
 }
 
 .headline-stat-readout {
-  position: relative;
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  padding: var(--space-4) var(--space-7);
-  background: linear-gradient(180deg, #07090c, var(--surface-0));
-  border: 1px solid var(--line);
-  border-radius: var(--radius-3);
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.55), inset 0 -1px 0 var(--edge-highlight);
-  overflow: hidden;
-}
-
-.headline-stat-readout::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(244, 245, 247, 0.025) 0px,
-    rgba(244, 245, 247, 0.025) 1px,
-    transparent 1px,
-    transparent 4px
-  );
+  gap: var(--space-4) var(--space-5);
 }
 
 .headline-stat-number {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-hero);
-  line-height: 1;
+  line-height: 0.9;
   letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
-  color: var(--flag-safety-car);
+  color: var(--delta-best);
   text-shadow:
-    0 0 6px color-mix(in srgb, var(--flag-safety-car) 70%, transparent),
-    0 0 28px color-mix(in srgb, var(--flag-safety-car) 40%, transparent);
+    0 0 8px  color-mix(in srgb, var(--delta-best) 55%, transparent),
+    0 0 40px color-mix(in srgb, var(--delta-best) 28%, transparent);
 }
 
 .headline-stat-unit {
-  align-self: center;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-h2);
@@ -80,14 +54,28 @@
   border: 0;
 }
 
+.headline-stat-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: var(--space-2);
+  padding-bottom: 10px;   /* optical: sits up off the numeral's descender line */
+}
+
 .headline-stat-caption {
   font-family: var(--font-body);
-  font-size: var(--text-body);
-  color: var(--ink-primary);
+  font-size: 14px;
+  color: var(--ink-secondary);
+  max-width: 26ch;
 }
 
 .headline-stat-caption strong {
+  display: block;
   font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--text-data-xl);
+  font-variant-numeric: tabular-nums;
   color: var(--signal-positive);
 }
 
@@ -98,16 +86,14 @@
 }
 
 .headline-stat-loading {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   color: var(--ink-secondary);
 }
 
-.headline-stat-loading p {
-  font-family: var(--font-body);
-  font-size: var(--text-body);
-}
+.headline-stat-loading p { font-family: var(--font-body); font-size: var(--text-body); }
 
 .headline-stat-spinner {
   width: 16px;
@@ -119,11 +105,7 @@
   animation: headline-stat-spin 700ms linear infinite;
 }
 
-@keyframes headline-stat-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes headline-stat-spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   .headline-stat-spinner {
@@ -131,10 +113,7 @@
   }
 }
 
-.headline-stat-error {
-  align-items: flex-start;
-  text-align: left;
-}
+.headline-stat-error { display: block; }
 
 .headline-stat-error-heading {
   font-family: var(--font-display);
@@ -150,13 +129,16 @@
   color: var(--ink-primary);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 880px) {
   .headline-stat {
-    padding: 32px 20px;
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: var(--space-6) var(--space-5);
   }
-
-  .headline-stat-readout {
-    gap: 10px;
-    padding: 8px 18px;
+  .headline-stat-aside {
+    align-items: flex-start;
+    text-align: left;
+    padding-bottom: 0;
   }
+  .headline-stat-caption strong { display: inline; font-size: var(--text-data-lg); }
 }
