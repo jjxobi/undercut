@@ -12,10 +12,14 @@ import type {
 import ComparePanel from "./components/ComparePanel";
 import ControlPanel from "./components/ControlPanel";
 import HeadlineStat from "./components/HeadlineStat";
+import HowItWorks from "./components/HowItWorks";
 import ResultPanel from "./components/ResultPanel";
 import "./App.css";
 
+type View = "studio" | "how-it-works";
+
 function App() {
+  const [view, setView] = useState<View>("studio");
   const [strategyResult, setStrategyResult] = useState<StrategyResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,40 +89,55 @@ function App() {
       <header className="shell-header">
         <h1 className="wordmark">DISPATCH</h1>
         <span className="eyebrow">Strategy Studio</span>
+        <nav className="shell-nav" aria-label="Page">
+          <button
+            type="button"
+            className="shell-nav-link"
+            onClick={() => setView(view === "studio" ? "how-it-works" : "studio")}
+          >
+            {view === "studio" ? "How this works" : "Back to the tool"}
+          </button>
+        </nav>
         <span className={`session-status session-status-${sessionStatus}`}>
           <span className="session-status-dot" aria-hidden="true" />
           {sessionStatus === "fault" ? "Fault" : sessionStatus === "solving" ? "Solving" : "Ready"}
         </span>
       </header>
 
-      <section className="headline-band" aria-label="Headline metric">
-        <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
-      </section>
+      {view === "how-it-works" ? (
+        <HowItWorks onBack={() => setView("studio")} />
+      ) : (
+        <>
+          <section className="headline-band" aria-label="Headline metric">
+            <HeadlineStat summary={evaluationSummary} isLoading={isSummaryLoading} error={summaryError} />
+          </section>
 
-      <main className="shell-main">
-        <details className="control-rail" open>
-          <summary className="control-panel-summary blade-label">Race setup</summary>
-          <ControlPanel onSolve={handleSolve} isLoading={isLoading} onSelectionChange={setCurrentSelection} />
-        </details>
-        <section className="results-zone" aria-label="Recommended plan">
-          <ResultPanel
-            result={strategyResult}
-            pitLossSeconds={strategyResult?.pit_loss_seconds ?? 0}
-            isLoading={isLoading}
-            error={error}
-          />
-          <ComparePanel
-            selection={currentSelection}
-            result={compareResult}
-            isLoading={isComparing}
-            error={compareError}
-            onCompare={handleCompare}
-          />
-        </section>
-      </main>
+          <main className="shell-main">
+            <details className="control-rail" open>
+              <summary className="control-panel-summary blade-label">Race setup</summary>
+              <ControlPanel onSolve={handleSolve} isLoading={isLoading} onSelectionChange={setCurrentSelection} />
+            </details>
+            <section className="results-zone" aria-label="Recommended plan">
+              <ResultPanel
+                result={strategyResult}
+                pitLossSeconds={strategyResult?.pit_loss_seconds ?? 0}
+                isLoading={isLoading}
+                error={error}
+              />
+              <ComparePanel
+                selection={currentSelection}
+                result={compareResult}
+                isLoading={isComparing}
+                error={compareError}
+                onCompare={handleCompare}
+              />
+            </section>
+          </main>
+        </>
+      )}
 
       <footer className="shell-footer">
-        <span>Dispatch — a race-strategy portfolio project</span>
+        <span>Dispatch -- a race-strategy portfolio project</span>
         <span className="shell-footer-mono">CP-SAT solver · real circuit data</span>
       </footer>
     </div>

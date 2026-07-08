@@ -1,5 +1,5 @@
 :root {
-  /* surfaces — two materials: chassis (rail/header/footer) and display (data zones) */
+  /* surfaces -- two materials: chassis (rail/header/footer) and display (data zones) */
   --surface-0: #0b0d10;      /* display: hero band, results zone */
   --surface-1: #14171c;      /* retained: chart separator strokes, misc raised fills */
   --surface-2: #1d2128;      /* retained: disabled fills, loading track */
@@ -10,30 +10,30 @@
   /* ink */
   --ink-primary: #f4f5f7;
   --ink-secondary: #9aa1ac;
-  --ink-muted: #7a828e;      /* 4.63:1 on surface-1 — do not darken */
+  --ink-muted: #7a828e;      /* 4.63:1 on surface-1 -- do not darken */
 
   /* structure */
   --line: #262b33;
   --line-strong: #333a45;    /* interactive borders: input hover, tooltip edge */
   --edge-highlight: rgba(244, 245, 247, 0.05);
 
-  /* tire compounds — fixed FIA identity, never remapped */
+  /* tire compounds -- fixed FIA identity, never remapped */
   --tire-soft: #e8384f;
   --tire-medium: #f5c518;
   --tire-hard: #e7e9ed;
 
-  /* timing-delta semantics — the F1 color language */
+  /* timing-delta semantics -- the F1 color language */
   --delta-best: #bd7dff;     /* purple: session best / theoretical optimum. Hero numeral ONLY. */
   --signal-positive: #35d48a;/* green: personal best / achieved gain. Captured %, favorable gap. */
 
-  /* live accent — interaction and events only */
+  /* live accent -- interaction and events only */
   --flag-safety-car: #ff8a00;/* CTA, focus rings, selection, pit events, SOLVING status, blades */
 
-  /* chart series — validated pair, unchanged */
+  /* chart series -- validated pair, unchanged */
   --plan-deterministic: #5896cf;
   --plan-stochastic: #e07200;
 
-  /* type faces — deliberately retained */
+  /* type faces -- deliberately retained */
   --font-display: "Rajdhani", sans-serif;
   --font-body: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -48,7 +48,7 @@
   --text-data-lg: 20px;
   --text-data-xl: 24px;      /* primary stat readouts, captured % */
 
-  /* spacing — 4px base scale */
+  /* spacing -- 4px base scale */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -58,11 +58,11 @@
   --space-7: 48px;
   --space-8: 64px;
 
-  /* radius — instruments keep tight radii; zones have none (a monitor is not a card) */
+  /* radius -- instruments keep tight radii; zones have none (a monitor is not a card) */
   --radius-1: 2px;  /* inputs, buttons, bars */
   --radius-2: 4px;  /* tooltips */
 
-  /* elevation — wells and raised overlays only; zone-level shadows are gone with the cards */
+  /* elevation -- wells and raised overlays only; zone-level shadows are gone with the cards */
   --shadow-raised: inset 0 1px 0 var(--edge-highlight),
                    0 12px 28px -8px rgba(4, 6, 10, 0.7);
   --shadow-well: inset 0 1px 3px rgba(4, 6, 10, 0.55);

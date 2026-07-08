@@ -71,7 +71,7 @@ describe("ComparePanel", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("unknown era");
   });
 
-  it("frames a real significant gap in favor of the hedge when the deterministic plan cost more", () => {
+  it("frames a real significant gap in favour of the hedge when the deterministic plan cost more", () => {
     render(
       <ComparePanel selection={selection} result={compareResult} isLoading={false} error={null} onCompare={vi.fn()} />,
     );
