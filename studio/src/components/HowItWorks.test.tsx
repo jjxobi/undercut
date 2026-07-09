@@ -7,7 +7,7 @@ describe("HowItWorks", () => {
   it("renders the page title as an h2 and every section heading", () => {
     render(<HowItWorks onBack={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { level: 2, name: "How this works" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Methodology" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "The problem" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "How it decides" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "What it found" })).toBeInTheDocument();

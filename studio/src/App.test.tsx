@@ -34,16 +34,16 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.queryByRole("heading", { name: "How this works" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Methodology" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "How this works" }));
+    fireEvent.click(screen.getByRole("button", { name: "Methodology" }));
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 2, name: "How this works" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Methodology" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Back to the tool" }));
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.queryByRole("heading", { level: 2, name: "How this works" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Methodology" })).not.toBeInTheDocument();
   });
 });

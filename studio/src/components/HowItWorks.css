@@ -41,6 +41,12 @@
   gap: var(--space-7);
 }
 
+.how-it-works-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .how-it-works-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -53,6 +59,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.how-it-works-section + .how-it-works-section {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-6);
 }
 
 .how-it-works-section p,
@@ -68,13 +79,15 @@
 
 .how-it-works-delta {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: var(--text-data-xl);
   color: var(--delta-best);
 }
 
 .how-it-works-signal {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: var(--text-data-xl);
   color: var(--signal-positive);
 }
 

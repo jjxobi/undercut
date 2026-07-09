@@ -95,7 +95,7 @@ function App() {
             className="shell-nav-link"
             onClick={() => setView(view === "studio" ? "how-it-works" : "studio")}
           >
-            {view === "studio" ? "How this works" : "Back to the tool"}
+            {view === "studio" ? "Methodology" : "Back to the tool"}
           </button>
         </nav>
         <span className={`session-status session-status-${sessionStatus}`}>

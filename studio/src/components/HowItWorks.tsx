@@ -12,7 +12,10 @@ function HowItWorks({ onBack }: HowItWorksProps) {
       </button>
 
       <article className="how-it-works-body">
-        <h2 className="how-it-works-title">How this works</h2>
+        <div className="how-it-works-heading">
+          <p className="how-it-works-eyebrow blade-label">The project</p>
+          <h2 className="how-it-works-title">Methodology</h2>
+        </div>
 
         <section className="how-it-works-section">
           <h3 className="blade-label">The problem</h3>
