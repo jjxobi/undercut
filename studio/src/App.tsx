@@ -19,7 +19,7 @@ import "./App.css";
 type View = "studio" | "how-it-works";
 
 function App() {
-  const [view, setView] = useState<View>("studio");
+  const [view, setView] = useState<View>("how-it-works");
   const [strategyResult, setStrategyResult] = useState<StrategyResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,14 +88,20 @@ function App() {
     <div className="shell">
       <header className="shell-header">
         <h1 className="wordmark">UNDERCUT</h1>
-        <span className="eyebrow">Pit Strategy Tool</span>
         <nav className="shell-nav" aria-label="Page">
           <button
             type="button"
-            className="shell-nav-link"
-            onClick={() => setView(view === "studio" ? "how-it-works" : "studio")}
+            className={`shell-nav-link${view === "how-it-works" ? " shell-nav-link-active" : ""}`}
+            onClick={() => setView("how-it-works")}
           >
-            {view === "studio" ? "Methodology" : "Back to the tool"}
+            Methodology
+          </button>
+          <button
+            type="button"
+            className={`shell-nav-link${view === "studio" ? " shell-nav-link-active" : ""}`}
+            onClick={() => setView("studio")}
+          >
+            Pit Strategy Tool
           </button>
         </nav>
         <span className={`session-status session-status-${sessionStatus}`}>
@@ -105,7 +111,7 @@ function App() {
       </header>
 
       {view === "how-it-works" ? (
-        <HowItWorks onBack={() => setView("studio")} />
+        <HowItWorks onViewTool={() => setView("studio")} />
       ) : (
         <>
           <section className="headline-band" aria-label="Headline metric">
@@ -137,7 +143,7 @@ function App() {
       )}
 
       <footer className="shell-footer">
-        <span>Undercut -- a race-strategy portfolio project</span>
+        <span>Undercut, a race-strategy portfolio project</span>
         <span className="shell-footer-mono">CP-SAT solver · real circuit data</span>
       </footer>
     </div>

@@ -1,16 +1,12 @@
 import "./HowItWorks.css";
 
 interface HowItWorksProps {
-  onBack: () => void;
+  onViewTool: () => void;
 }
 
-function HowItWorks({ onBack }: HowItWorksProps) {
+function HowItWorks({ onViewTool }: HowItWorksProps) {
   return (
     <div className="how-it-works">
-      <button type="button" className="how-it-works-back" onClick={onBack}>
-        &larr; Back to the tool
-      </button>
-
       <article className="how-it-works-body">
         <div className="how-it-works-heading">
           <p className="how-it-works-eyebrow blade-label">The project</p>
@@ -21,13 +17,13 @@ function HowItWorks({ onBack }: HowItWorksProps) {
           <h3 className="blade-label">The problem</h3>
           <p>
             In Formula 1, a pit stop for fresh tyres costs around 20-25 seconds. But if a safety car happens to be
-            out at the exact moment you pit, that cost drops by roughly 70% -- because the whole field is driving
+            out at the exact moment you pit, that cost drops by roughly 70%, because the whole field is driving
             slowly anyway, so you lose almost nothing by comparison.
           </p>
           <p>
             That's the whole problem in one sentence:{" "}
             <strong>the best time to change your tyres depends on something you can't know in advance.</strong> A
-            team has to commit to a plan -- which tyres, and roughly when to change them -- before the race even
+            team has to commit to a plan (which tyres, and roughly when to change them) before the race even
             starts, with no idea whether a safety car is coming, or when.
           </p>
           <p>
@@ -46,8 +42,8 @@ function HowItWorks({ onBack }: HowItWorksProps) {
             <li>
               <strong>How fast do tyres wear out?</strong>
               <p>
-                Using real lap times from hundreds of past races, the tool learns -- for each tyre type, at each
-                track, in each era of car rules -- how many seconds you lose per lap as the tyres age. This is the
+                Using real lap times from hundreds of past races, the tool learns (for each tyre type, at each
+                track, in each era of car rules) how many seconds you lose per lap as the tyres age. This is the
                 foundation: it means the tool can predict "20 laps on this tyre will cost you about this many
                 seconds," accurately, for almost any circuit.
               </p>
@@ -56,20 +52,20 @@ function HowItWorks({ onBack }: HowItWorksProps) {
               <strong>How likely is a safety car, and when?</strong>
               <p>
                 Same idea, different question. Using years of real incident history, the tool learns how likely a
-                safety car is on each specific lap of each track -- early-race incidents are far more common than
+                safety car is on each specific lap of each track. Early-race incidents are far more common than
                 late-race ones at some circuits, for example. This turns "a safety car might happen" into an actual
                 probability, lap by lap.
               </p>
             </li>
             <li>
               <strong>How much does a pit stop really cost, here?</strong>
-              <p>A real, track-specific number, pulled from actual pit-lane timing data -- not a guess.</p>
+              <p>A real, track-specific number, pulled from actual pit-lane timing data, not a guess.</p>
             </li>
             <li>
               <strong>Putting it together.</strong>
               <p>
                 With all three pieces of real data in hand, the tool doesn't try to predict the one true outcome of
-                the race. Instead, it simulates around 200 different plausible versions of it -- each one a different
+                the race. Instead, it simulates around 200 different plausible versions of it: each one a different
                 guess at whether and when a safety car shows up, drawn from the real probabilities in step 2. Then
                 it checks every reasonable tyre strategy against all 200 simulated races at once, and picks
                 whichever plan comes out cheapest <em>on average</em>.
@@ -78,7 +74,7 @@ function HowItWorks({ onBack }: HowItWorksProps) {
           </ol>
           <p>
             That's the actual decision rule: not the best plan if everything goes smoothly, and not the safest plan
-            if everything goes wrong -- the plan that wins on average across a realistic spread of what could
+            if everything goes wrong, but the plan that wins on average across a realistic spread of what could
             actually happen.
           </p>
         </section>
@@ -92,19 +88,19 @@ function HowItWorks({ onBack }: HowItWorksProps) {
           <p>
             Using 652 real past races, this project compared three things for each one: what the driver actually
             did, what this tool's strategy would have recommended beforehand, and what a strategy would have looked
-            like with perfect hindsight -- knowing exactly when the safety car was going to come out, if it did at
+            like with perfect hindsight, knowing exactly when the safety car was going to come out, if it did at
             all.
           </p>
           <p>
             The result: perfect hindsight was worth about{" "}
             <strong className="how-it-works-delta">17 seconds</strong> a race, on average, over what actually
-            happened. This tool's strategy -- recommended <em>without</em> knowing the future, the same way a real
-            team has to work -- captured about <strong className="how-it-works-signal">63%</strong> of that value.
+            happened. This tool's strategy (recommended <em>without</em> knowing the future, the same way a real
+            team has to work) captured about <strong className="how-it-works-signal">63%</strong> of that value.
           </p>
           <p>
             In plain terms: hedging against uncertainty, instead of just planning for the smoothest possible race,
-            recovers most of the advantage that perfect information would have given you. Not all of it -- nobody
-            can out-guess a genuinely random event -- but most of it.
+            recovers most of the advantage that perfect information would have given you. Not all of it (nobody
+            can out-guess a genuinely random event), but most of it.
           </p>
         </section>
 
@@ -117,7 +113,7 @@ function HowItWorks({ onBack }: HowItWorksProps) {
           <ul className="how-it-works-list">
             <li>
               This only accounts for tyre wear and pit-stop time. It doesn't account for how a strategy affects your
-              position relative to other cars on track -- passing and being passed is a separate, harder problem
+              position relative to other cars on track. Passing and being passed is a separate, harder problem
               this project measures but doesn't fold into the headline number.
             </li>
             <li>
@@ -135,13 +131,19 @@ function HowItWorks({ onBack }: HowItWorksProps) {
         <section className="how-it-works-section">
           <h3 className="blade-label">Why this exists</h3>
           <p>
-            This started as a genuine question -- pit strategy always looked like exactly the kind of decision that's
+            This started as a genuine question. Pit strategy always looked like exactly the kind of decision that's
             hard for a person to reason about but well suited to being modelled properly: real uncertainty, real
             historical data, and a clear way to check afterward whether the smarter approach actually worked.
-            Building it end to end -- the statistics, the decision-making under uncertainty, and then honestly
-            grading the result against what really happened -- was the point as much as the F1 angle was.
+            Building it end to end (the statistics, the decision-making under uncertainty, and then honestly
+            grading the result against what really happened) was the point as much as the F1 angle was.
           </p>
         </section>
+
+        <div className="how-it-works-cta">
+          <button type="button" className="how-it-works-cta-button" onClick={onViewTool}>
+            View the tool &rarr;
+          </button>
+        </div>
       </article>
     </div>
   );

@@ -23,7 +23,7 @@ describe("HeadlineStat", () => {
 
   it("shows the backend's real detail message when the baseline fails to load", () => {
     render(
-      <HeadlineStat summary={null} isLoading={false} error="regret_report.csv not found -- run scripts/run_evaluation.py first" />,
+      <HeadlineStat summary={null} isLoading={false} error="regret_report.csv not found, run scripts/run_evaluation.py first" />,
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("regret_report.csv not found");

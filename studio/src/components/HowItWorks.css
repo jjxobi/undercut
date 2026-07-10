@@ -11,28 +11,6 @@
   }
 }
 
-.how-it-works-back {
-  appearance: none;
-  background: none;
-  border: none;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-  cursor: pointer;
-  margin-bottom: var(--space-6);
-}
-
-.how-it-works-back:hover {
-  color: var(--flag-safety-car);
-}
-
 .how-it-works-body {
   max-width: 680px;
   margin-inline: auto;
@@ -154,6 +132,48 @@
 
 .how-it-works-steps li p {
   margin: 0;
+}
+
+.how-it-works-cta {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-6);
+}
+
+.how-it-works-cta-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: var(--flag-safety-car);
+  border: none;
+  border-left: 4px solid color-mix(in srgb, var(--surface-0) 35%, var(--flag-safety-car));
+  border-radius: var(--radius-1);
+  color: var(--surface-0);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.how-it-works-cta-button:hover {
+  background: color-mix(in srgb, var(--flag-safety-car) 88%, white);
+  box-shadow: 0 4px 18px -6px color-mix(in srgb, var(--flag-safety-car) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.how-it-works-cta-button:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: none;
+}
+
+.how-it-works-cta-button:focus-visible {
+  outline: 2px solid var(--flag-safety-car);
+  outline-offset: 2px;
 }
 
 @media (max-width: 880px) {

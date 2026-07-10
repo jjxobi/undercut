@@ -24,14 +24,14 @@ function describeGap(result: CompareResponse): string {
   const se = result.gap_standard_error;
 
   if (!result.gap_is_significant) {
-    return `The gap between the two plans is smaller than the noise in these scenarios (± ${formatSeconds(se)}) -- hedging against the safety car neither helped nor hurt here.`;
+    return `The gap between the two plans is smaller than the noise in these scenarios (± ${formatSeconds(se)}): hedging against the safety car neither helped nor hurt here.`;
   }
 
   if (gap > 0) {
-    return `Committing to the no-safety-car plan runs ${formatSeconds(gap)} slower on average than the plan that hedged -- the hedge earned its keep here.`;
+    return `Committing to the no-safety-car plan runs ${formatSeconds(gap)} slower on average than the plan that hedged: the hedge earned its keep here.`;
   }
 
-  return `Hedging against the safety car runs ${formatSeconds(-gap)} slower on average than just committing to the no-safety-car plan -- the caution wasn't worth it here.`;
+  return `Hedging against the safety car runs ${formatSeconds(-gap)} slower on average than just committing to the no-safety-car plan: the caution wasn't worth it here.`;
 }
 
 function ComparePanel({ selection, result, isLoading, error, onCompare }: ComparePanelProps) {

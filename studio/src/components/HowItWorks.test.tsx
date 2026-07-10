@@ -5,7 +5,7 @@ import HowItWorks from "./HowItWorks";
 
 describe("HowItWorks", () => {
   it("renders the page title as an h2 and every section heading", () => {
-    render(<HowItWorks onBack={vi.fn()} />);
+    render(<HowItWorks onViewTool={vi.fn()} />);
 
     expect(screen.getByRole("heading", { level: 2, name: "Methodology" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 3, name: "The problem" })).toBeInTheDocument();
@@ -17,18 +17,24 @@ describe("HowItWorks", () => {
   });
 
   it("carries the headline regret figures", () => {
-    render(<HowItWorks onBack={vi.fn()} />);
+    render(<HowItWorks onViewTool={vi.fn()} />);
 
     expect(screen.getByText("17 seconds")).toBeInTheDocument();
     expect(screen.getByText("63%")).toBeInTheDocument();
   });
 
-  it("calls back to the tool when the back control is used", () => {
-    const onBack = vi.fn();
-    render(<HowItWorks onBack={onBack} />);
+  it("has no leftover back-to-the-tool control", () => {
+    render(<HowItWorks onViewTool={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /back to the tool/i }));
+    expect(screen.queryByRole("button", { name: /back to the tool/i })).not.toBeInTheDocument();
+  });
 
-    expect(onBack).toHaveBeenCalledTimes(1);
+  it("calls through to the tool when the bottom call to action is used", () => {
+    const onViewTool = vi.fn();
+    render(<HowItWorks onViewTool={onViewTool} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /view the tool/i }));
+
+    expect(onViewTool).toHaveBeenCalledTimes(1);
   });
 });
