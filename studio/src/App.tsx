@@ -87,8 +87,8 @@ function App() {
   return (
     <div className="shell">
       <header className="shell-header">
-        <h1 className="wordmark">DISPATCH</h1>
-        <span className="eyebrow">Strategy Studio</span>
+        <h1 className="wordmark">UNDERCUT</h1>
+        <span className="eyebrow">Pit Strategy Tool</span>
         <nav className="shell-nav" aria-label="Page">
           <button
             type="button"
@@ -137,7 +137,7 @@ function App() {
       )}
 
       <footer className="shell-footer">
-        <span>Dispatch -- a race-strategy portfolio project</span>
+        <span>Undercut -- a race-strategy portfolio project</span>
         <span className="shell-footer-mono">CP-SAT solver · real circuit data</span>
       </footer>
     </div>

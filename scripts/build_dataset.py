@@ -84,7 +84,7 @@ def write_tables(tables: dict[str, pd.DataFrame], out_dir: Path = PROCESSED_DIR)
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build the processed Dispatch dataset from FastF1 + Jolpica-F1"
+        description="Build the processed Undercut dataset from FastF1 + Jolpica-F1"
     )
     parser.add_argument("--seasons", type=int, nargs="*", default=config.SEASONS)
     parser.add_argument("--out", type=Path, default=PROCESSED_DIR)
