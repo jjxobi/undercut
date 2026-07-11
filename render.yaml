@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: dispatch-api
+    name: undercut-api
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
