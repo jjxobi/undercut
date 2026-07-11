@@ -17,10 +17,12 @@ def test_regulation_era_known_boundaries():
     assert config.regulation_era(2026) == "2026 active-aero"
 
 
-def test_regulation_era_open_ended_covers_future_seasons():
-    # no era configured beyond 2026 yet -- future seasons fall into the
-    # latest open-ended era until someone adds a new row to REGULATION_ERAS
-    assert config.regulation_era(2027) == "2026 active-aero"
+def test_regulation_era_rejects_unconfirmed_future_season():
+    # a season past LAST_CONFIRMED_SEASON must fail loudly instead of silently
+    # inheriting the current era -- that call is only safe once a human has
+    # checked whether new technical regulations apply
+    with pytest.raises(ValueError, match="beyond the last confirmed regulation era"):
+        config.regulation_era(config.LAST_CONFIRMED_SEASON + 1)
 
 
 def test_regulation_era_rejects_season_before_first_era():

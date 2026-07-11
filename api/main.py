@@ -44,7 +44,7 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
         app.state.strategy_cache = OrderedDict()
         yield
 
-    app = FastAPI(title="dispatch", lifespan=lifespan)
+    app = FastAPI(title="undercut", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
