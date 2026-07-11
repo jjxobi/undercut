@@ -99,6 +99,24 @@ describe("ControlPanel", () => {
     });
   });
 
+  it("shows the country next to the circuit name but skips it when redundant", async () => {
+    mockedFetchCircuits.mockResolvedValue({
+      circuits: [
+        { circuit_id: "silverstone", default_race_length: 52 },
+        { circuit_id: "bahrain", default_race_length: 57 },
+      ],
+      eras: circuitsResponse.eras,
+    });
+    render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={vi.fn()} />);
+
+    const circuitSelect = await screen.findByLabelText("Circuit");
+    const options = within(circuitSelect).getAllByRole("option") as HTMLOptionElement[];
+    expect(options.map((option) => option.textContent)).toEqual([
+      "Silverstone (United Kingdom)",
+      "Bahrain",
+    ]);
+  });
+
   it("surfaces the backend's real error message when circuits fail to load", async () => {
     mockedFetchCircuits.mockRejectedValue(new Error("GET /circuits failed (503): degradation_coefficients.csv not found"));
     render(<ControlPanel onSolve={vi.fn()} isLoading={false} onSelectionChange={vi.fn()} />);

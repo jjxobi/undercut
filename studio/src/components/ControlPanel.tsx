@@ -25,6 +25,51 @@ function formatCircuitLabel(circuitId: string): string {
     .join(" ");
 }
 
+const CIRCUIT_COUNTRIES: Record<string, string> = {
+  albert_park: "Australia",
+  americas: "United States",
+  bahrain: "Bahrain",
+  baku: "Azerbaijan",
+  catalunya: "Spain",
+  hockenheimring: "Germany",
+  hungaroring: "Hungary",
+  imola: "Italy",
+  interlagos: "Brazil",
+  istanbul: "Turkey",
+  jeddah: "Saudi Arabia",
+  losail: "Qatar",
+  madring: "Spain",
+  marina_bay: "Singapore",
+  miami: "United States",
+  monaco: "Monaco",
+  monza: "Italy",
+  mugello: "Italy",
+  nurburgring: "Germany",
+  portimao: "Portugal",
+  red_bull_ring: "Austria",
+  ricard: "France",
+  rodriguez: "Mexico",
+  sepang: "Malaysia",
+  shanghai: "China",
+  silverstone: "United Kingdom",
+  sochi: "Russia",
+  spa: "Belgium",
+  suzuka: "Japan",
+  vegas: "United States",
+  villeneuve: "Canada",
+  yas_marina: "United Arab Emirates",
+  zandvoort: "Netherlands",
+};
+
+function circuitLabel(circuitId: string): string {
+  const trackName = formatCircuitLabel(circuitId);
+  const country = CIRCUIT_COUNTRIES[circuitId];
+  if (!country || country.toLowerCase() === trackName.toLowerCase()) {
+    return trackName;
+  }
+  return `${trackName} (${country})`;
+}
+
 type LoadState = "loading" | "ready" | "error";
 
 function ControlPanel({ onSolve, isLoading, onSelectionChange }: ControlPanelProps) {
@@ -121,7 +166,7 @@ function ControlPanel({ onSolve, isLoading, onSelectionChange }: ControlPanelPro
           {circuits.length === 0 && <option value="">Loading circuits&hellip;</option>}
           {circuits.map((circuit) => (
             <option key={circuit.circuit_id} value={circuit.circuit_id}>
-              {formatCircuitLabel(circuit.circuit_id)}
+              {circuitLabel(circuit.circuit_id)}
             </option>
           ))}
         </select>
