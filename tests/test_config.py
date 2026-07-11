@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from modeling import config
@@ -17,12 +19,19 @@ def test_regulation_era_known_boundaries():
     assert config.regulation_era(2026) == "2026 active-aero"
 
 
-def test_regulation_era_rejects_unconfirmed_future_season():
-    # a season past LAST_CONFIRMED_SEASON must fail loudly instead of silently
-    # inheriting the current era -- that call is only safe once a human has
-    # checked whether new technical regulations apply
-    with pytest.raises(ValueError, match="beyond the last confirmed regulation era"):
-        config.regulation_era(config.LAST_CONFIRMED_SEASON + 1)
+def test_regulation_era_warns_but_keeps_going_past_confirmed_season():
+    # a season past LAST_CONFIRMED_SEASON still resolves to the current era
+    # (the pipeline shouldn't break on a new season), but it should say so
+    # loudly rather than silently assume the rules haven't changed
+    with pytest.warns(UserWarning, match="beyond the last confirmed regulation era"):
+        era = config.regulation_era(config.LAST_CONFIRMED_SEASON + 1)
+    assert era == "2026 active-aero"
+
+
+def test_regulation_era_confirmed_seasons_dont_warn():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert config.regulation_era(config.LAST_CONFIRMED_SEASON) == "2026 active-aero"
 
 
 def test_regulation_era_rejects_season_before_first_era():
