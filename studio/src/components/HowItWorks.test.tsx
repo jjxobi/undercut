@@ -19,8 +19,8 @@ describe("HowItWorks", () => {
   it("carries the headline regret figures", () => {
     render(<HowItWorks onViewTool={vi.fn()} />);
 
-    expect(screen.getByText("17 seconds")).toBeInTheDocument();
-    expect(screen.getByText("63%")).toBeInTheDocument();
+    expect(screen.getByText("16 seconds")).toBeInTheDocument();
+    expect(screen.getByText("58%")).toBeInTheDocument();
   });
 
   it("has no leftover back-to-the-tool control", () => {

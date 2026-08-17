@@ -1,4 +1,4 @@
-# dispatch
+# undercut
 
 F1 pit strategy under safety-car uncertainty. The core idea: a good strategy
 has to commit to a pit plan before knowing whether a safety car shows up, so
@@ -35,11 +35,11 @@ policy would have recommended, and what a perfect, after-the-fact strategy
 
 Averaged across those 652 driver-races:
 
-- perfect information was worth **16.77 seconds** per driver-race over what
+- perfect information was worth **15.61 seconds** per driver-race over what
   actually happened (mean actual regret)
 - the stochastic policy's own regret against that same perfect-information
-  benchmark is **6.17 seconds**
-- so the policy captured about **63%** of the value that hindsight had
+  benchmark is **6.61 seconds**
+- so the policy captured about **58%** of the value that hindsight had
   available to give
 
 That's the number the studio's headline stat and `/evaluation/summary`
@@ -102,7 +102,7 @@ between the average driver-race and the best possible one."
   races run on strategies outside that set (extra splash-and-dash stops,
   five-stop wet races, whatever) are dropped from the regret report
   entirely, not scored against it.
-- the regret numbers themselves (the 16.77s / 63% headline) are strictly a
+- the regret numbers themselves (the 15.61s / 58% headline) are strictly a
   tyre-and-pit-stop time cost. they don't fold in the field-interaction
   model's own calibration error noted above, so a strategy that looks cheap
   in seconds could still cost or gain positions in ways the regret report
@@ -142,28 +142,35 @@ strategy, plus how that recommendation holds up against a genuinely
 uncertain race (deterministic vs. stochastic, priced on scenarios neither
 one optimized against) and the headline regret-captured stat above.
 
-to re-pull data and re-fit everything from scratch in one pass:
+to re-pull the current season's data and re-fit everything in one pass
+(past seasons don't change, so this is what the weekly refresh runs; pass
+`--seasons` explicitly for a wider rebuild):
 
     python scripts/refresh.py
 
 ## deployment
 
-the repo is set up to deploy, though nothing is deployed from it yet:
+live at:
+
+- studio: https://undercut.jesse-obrien.com (Vercel)
+- api: https://undercut-api-guhx.onrender.com (Render, free plan)
+
+how it's wired:
 
 - `Dockerfile` builds a self-contained API image -- it bakes in
   `data/processed/` so the container doesn't need a data volume or a
   startup fetch, just `uvicorn api.main:app`.
 - `render.yaml` is a Render blueprint pointing at that Dockerfile with a
-  `/health` check.
+  `/health` check. Render auto-deploys on every push to `main`.
 - `studio/vercel.json` builds and serves the studio frontend as a static
-  site (`npm run build`, `dist/`) -- note it only takes effect if the
-  Vercel project's "Root Directory" setting is also pointed at `studio/`.
+  site (`npm run build`, `dist/`), with the Vercel project's "Root
+  Directory" pointed at `studio/` and `VITE_API_BASE_URL` set to the
+  Render URL above.
 - `.github/workflows/refresh.yml` re-runs `scripts/refresh.py` on a weekly
-  cron and commits `data/processed/` if anything changed, so a deployed
-  Render instance can pick up a fresh fit on redeploy.
+  cron, scoped to just the current season, and commits `data/processed/`
+  if anything changed, so a redeploy picks up a fresh fit automatically.
 - `.github/workflows/ci.yml` runs the backend (`ruff`, `pytest`) and
   frontend (`tsc`, `vitest`, `npm run build`) checks on every push and PR.
 
-actually wiring up the Render/Vercel services, connecting them to a GitHub
-remote, and setting secrets is the next step, not something this repo does
-by itself.
+the free Render plan spins down after inactivity, so the first request
+after a while can take 30-60 seconds to wake back up.

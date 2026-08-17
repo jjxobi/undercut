@@ -93,9 +93,9 @@ function HowItWorks({ onViewTool }: HowItWorksProps) {
           </p>
           <p>
             The result: perfect hindsight was worth about{" "}
-            <strong className="how-it-works-delta">17 seconds</strong> a race, on average, over what actually
+            <strong className="how-it-works-delta">16 seconds</strong> a race, on average, over what actually
             happened. This tool's strategy (recommended <em>without</em> knowing the future, the same way a real
-            team has to work) captured about <strong className="how-it-works-signal">63%</strong> of that value.
+            team has to work) captured about <strong className="how-it-works-signal">58%</strong> of that value.
           </p>
           <p>
             In plain terms: hedging against uncertainty, instead of just planning for the smoothest possible race,
