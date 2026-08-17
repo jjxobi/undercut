@@ -9,7 +9,7 @@ def test_refresh_calls_every_stage_in_order(tmp_path, monkeypatch):
 
     def fake_build(seasons, refresh=False):
         calls.append(("build", seasons, refresh))
-        return {"laps": pd.DataFrame()}
+        return {"laps": pd.DataFrame(), "results": pd.DataFrame()}
 
     def fake_merge_and_write_tables(tables, seasons, out_dir):
         calls.append(("write_tables", out_dir))
@@ -61,7 +61,11 @@ def test_refresh_defaults_to_just_the_current_season(tmp_path, monkeypatch):
     # to be re-fetched and merged in
     calls = []
 
-    monkeypatch.setattr(refresh.build_dataset, "build", lambda seasons, refresh=False: calls.append(seasons) or {})
+    monkeypatch.setattr(
+        refresh.build_dataset, "build",
+        lambda seasons, refresh=False: calls.append(seasons)
+        or {"laps": pd.DataFrame(), "results": pd.DataFrame()},
+    )
     monkeypatch.setattr(refresh.build_dataset, "merge_and_write_tables", lambda tables, seasons, out_dir: None)
     monkeypatch.setattr(refresh.fit_degradation_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
     monkeypatch.setattr(refresh.fit_hazard_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
@@ -71,3 +75,54 @@ def test_refresh_defaults_to_just_the_current_season(tmp_path, monkeypatch):
     refresh.refresh(processed_dir=tmp_path)
 
     assert calls == [[config.LAST_CONFIRMED_SEASON]]
+
+
+def test_refresh_refuses_to_merge_when_laps_are_mostly_missing(tmp_path, monkeypatch):
+    # results (Jolpica) succeeding while laps (FastF1) come back almost empty
+    # is the signature of a failed fetch, not a real absence of lap data --
+    # this must never be allowed to silently overwrite good existing data
+    merge_calls = []
+
+    def fake_build(seasons, refresh=False):
+        return {
+            "laps": pd.DataFrame({"Season": [2026], "Round": [1]}),
+            "results": pd.DataFrame({"Season": [2026] * 10, "Round": list(range(1, 11))}),
+        }
+
+    monkeypatch.setattr(refresh.build_dataset, "build", fake_build)
+    monkeypatch.setattr(
+        refresh.build_dataset, "merge_and_write_tables",
+        lambda tables, seasons, out_dir: merge_calls.append(seasons),
+    )
+
+    try:
+        refresh.refresh(processed_dir=tmp_path, seasons=[2026])
+        raised = False
+    except RuntimeError:
+        raised = True
+
+    assert raised
+    assert merge_calls == []
+
+
+def test_refresh_proceeds_when_laps_coverage_is_healthy(tmp_path, monkeypatch):
+    def fake_build(seasons, refresh=False):
+        return {
+            "laps": pd.DataFrame({"Season": [2026] * 10, "Round": list(range(1, 11))}),
+            "results": pd.DataFrame({"Season": [2026] * 10, "Round": list(range(1, 11))}),
+        }
+
+    merge_calls = []
+    monkeypatch.setattr(refresh.build_dataset, "build", fake_build)
+    monkeypatch.setattr(
+        refresh.build_dataset, "merge_and_write_tables",
+        lambda tables, seasons, out_dir: merge_calls.append(seasons),
+    )
+    monkeypatch.setattr(refresh.fit_degradation_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+    monkeypatch.setattr(refresh.fit_hazard_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+    monkeypatch.setattr(refresh.fit_field_interaction_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+    monkeypatch.setattr(refresh.run_evaluation, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+
+    refresh.refresh(processed_dir=tmp_path, seasons=[2026])
+
+    assert merge_calls == [[2026]]

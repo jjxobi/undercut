@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import pandas as pd
+
 from modeling import config
 from scripts import (
     build_dataset,
@@ -14,11 +16,35 @@ from scripts import (
 
 PROCESSED_DIR = Path("data/processed")
 
+# results come from Jolpica, laps from FastF1 -- independent sources. If
+# results succeeded but laps came back mostly empty, that's the signature of
+# a failed FastF1 fetch (rate limiting, a network hiccup), not a real absence
+# of lap data, and merging it would silently overwrite good existing data.
+MIN_LAP_COVERAGE_FRACTION = 0.5
+
+
+def _season_round_pairs(frame: pd.DataFrame) -> set[tuple]:
+    if "Season" not in frame.columns or "Round" not in frame.columns:
+        return set()
+    return set(zip(frame["Season"], frame["Round"], strict=False))
+
+
+def _check_fetch_is_complete_enough(tables: dict[str, pd.DataFrame]) -> None:
+    results_rounds = _season_round_pairs(tables["results"])
+    laps_rounds = _season_round_pairs(tables["laps"])
+    if results_rounds and len(laps_rounds) < len(results_rounds) * MIN_LAP_COVERAGE_FRACTION:
+        raise RuntimeError(
+            f"fetched results for {len(results_rounds)} round(s) but lap data for only {len(laps_rounds)} -- "
+            "this looks like a failed FastF1 fetch, not real data. Refusing to overwrite the existing "
+            "processed data with this."
+        )
+
 
 def refresh(processed_dir: Path = PROCESSED_DIR, seasons: list[int] | None = None) -> None:
     seasons = seasons if seasons is not None else [config.LAST_CONFIRMED_SEASON]
     print(f"pulling season(s) {seasons}...")
     tables = build_dataset.build(seasons, refresh=True)
+    _check_fetch_is_complete_enough(tables)
     build_dataset.merge_and_write_tables(tables, seasons, processed_dir)
 
     print("fitting degradation model...")
