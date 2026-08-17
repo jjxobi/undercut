@@ -46,7 +46,7 @@ describe("ComparePanel", () => {
       circuit_id: "bahrain",
       era: "2018-2021 aero",
       race_length: 57,
-      n_scenarios: 200,
+      n_scenarios: 80,
       seed: 0,
     });
   });

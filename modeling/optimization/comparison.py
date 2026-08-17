@@ -1,30 +1,25 @@
 from __future__ import annotations
 
 import statistics
-from pathlib import Path
 
 import pandas as pd
 
-from modeling.optimization import degradation_lookup, pit_loss, pricing, scenarios, solver, strategy
+from modeling.optimization import degradation_lookup, pricing, scenarios, solver, strategy
 
 DEFAULT_N_SCENARIOS = 200
 GAP_SIGNIFICANCE_MULTIPLIER = 2.0
 
 
 def compare_deterministic_vs_stochastic(
-    processed_dir: Path,
+    degradation_coefficients: pd.DataFrame,
+    hazard_coefficients: pd.DataFrame,
+    pit_loss_table: pd.DataFrame,
     circuit_id: str,
     era: str,
     race_length: int,
     n_scenarios: int = DEFAULT_N_SCENARIOS,
     seed: int = 0,
 ) -> dict:
-    degradation_coefficients = pd.read_csv(processed_dir / "degradation_coefficients.csv")
-    hazard_coefficients = pd.read_csv(processed_dir / "hazard_coefficients.csv")
-    laps = pd.read_parquet(processed_dir / "laps.parquet")
-    schedule = pd.read_parquet(processed_dir / "schedule.parquet")
-
-    pit_loss_table = pit_loss.estimate_pit_loss(laps, schedule)
     circuit_pit_loss = pit_loss_table[pit_loss_table["circuit_id"] == circuit_id]
     pit_loss_seconds = (
         float(circuit_pit_loss.iloc[0]["pit_loss_seconds"])

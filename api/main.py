@@ -42,6 +42,7 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
         app.state.default_race_lengths = latest["LapNumber"].astype(int).to_dict()
 
         app.state.strategy_cache = OrderedDict()
+        app.state.compare_cache = OrderedDict()
         yield
 
     app = FastAPI(title="undercut", lifespan=lifespan)

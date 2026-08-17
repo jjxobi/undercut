@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from modeling.optimization import comparison, solver
+import pandas as pd
+
+from modeling.optimization import comparison, pit_loss, solver
 
 PROCESSED_DIR = Path("data/processed")
 
@@ -27,8 +29,21 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
+    degradation_coefficients = pd.read_csv(args.processed_dir / "degradation_coefficients.csv")
+    hazard_coefficients = pd.read_csv(args.processed_dir / "hazard_coefficients.csv")
+    laps = pd.read_parquet(args.processed_dir / "laps.parquet")
+    schedule = pd.read_parquet(args.processed_dir / "schedule.parquet")
+    pit_loss_table = pit_loss.estimate_pit_loss(laps, schedule)
+
     result = comparison.compare_deterministic_vs_stochastic(
-        args.processed_dir, args.circuit_id, args.era, args.race_length, args.n_scenarios, args.seed
+        degradation_coefficients,
+        hazard_coefficients,
+        pit_loss_table,
+        args.circuit_id,
+        args.era,
+        args.race_length,
+        args.n_scenarios,
+        args.seed,
     )
 
     sc_discount_percent = int((1 - solver.PIT_LOSS_SC_FRACTION) * 100)

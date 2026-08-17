@@ -4,8 +4,10 @@ import "./ComparePanel.css";
 
 // A deeper, slower check than the main solve -- it runs two solves and draws
 // its own held-out scenario set, so it gets a fixed scenario count rather
-// than reusing whatever ControlPanel's input happens to be set to.
-const DEFAULT_N_SCENARIOS = 200;
+// than reusing whatever ControlPanel's input happens to be set to. Kept
+// modest rather than 200+ since the free-tier host doesn't have the memory
+// headroom for a much heavier scenario sweep on every click.
+const DEFAULT_N_SCENARIOS = 80;
 
 interface ComparePanelProps {
   selection: StrategySelection | null;
