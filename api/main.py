@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -10,8 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from api import circuits, compare, evaluation, strategy
+from api.compare import CompareResponse
+from api.strategy import StrategyResponse
 from modeling import config
 from modeling.optimization import pit_loss
+from scripts.warm_cache import OUTPUT_FILENAME as WARM_CACHE_FILENAME
+from scripts.warm_cache import parse_cache_key
 
 PROCESSED_DIR = Path("data/processed")
 
@@ -43,6 +48,15 @@ def create_app(data_dir: Path = PROCESSED_DIR) -> FastAPI:
 
         app.state.strategy_cache = OrderedDict()
         app.state.compare_cache = OrderedDict()
+
+        warm_cache_path = data_dir / WARM_CACHE_FILENAME
+        if warm_cache_path.exists():
+            warm = json.loads(warm_cache_path.read_text())
+            for key, entry in warm.get("strategy", {}).items():
+                app.state.strategy_cache[parse_cache_key(key)] = StrategyResponse(**entry)
+            for key, entry in warm.get("compare", {}).items():
+                app.state.compare_cache[parse_cache_key(key)] = CompareResponse(**entry)
+
         yield
 
     app = FastAPI(title="undercut", lifespan=lifespan)

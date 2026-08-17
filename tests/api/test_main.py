@@ -1,8 +1,11 @@
+import json
+
 import numpy as np
 import pandas as pd
 from fastapi.testclient import TestClient
 
 from api.main import create_app
+from scripts import warm_cache
 
 
 def _synthetic_data_dir(tmp_path):
@@ -121,3 +124,43 @@ def test_startup_derives_known_circuits_and_default_race_length(tmp_path):
         assert app.state.default_race_lengths["bahrain"] == 20
         assert "2018-2021 aero" in app.state.known_eras
         assert app.state.strategy_cache == {}
+
+
+def test_startup_loads_a_warm_cache_file_when_present(tmp_path, monkeypatch):
+    data_dir = _synthetic_data_dir(tmp_path)
+
+    strategy_key = warm_cache.cache_key("bahrain", "2018-2021 aero", 20, 200, 0)
+    warm = {
+        "strategy": {
+            strategy_key: {
+                "status": "optimal",
+                "compounds": ["SOFT", "HARD"],
+                "stint_lengths": [10, 10],
+                "pit_laps": [10],
+                "expected_cost_seconds": 12.3,
+                "pit_loss_seconds": 22.5,
+            }
+        },
+        "compare": {},
+    }
+    (data_dir / warm_cache.OUTPUT_FILENAME).write_text(json.dumps(warm))
+
+    app = create_app(data_dir=data_dir)
+    with TestClient(app) as client:
+        assert app.state.strategy_cache[("bahrain", "2018-2021 aero", 20, 200, 0)].expected_cost_seconds == 12.3
+
+        # a real cache hit must never touch the solver -- prove it by making
+        # the solver explode if this request falls through to a live solve
+        import modeling.optimization.strategy as strategy_module
+
+        monkeypatch.setattr(
+            strategy_module, "optimize_strategy",
+            lambda *a, **k: (_ for _ in ()).throw(AssertionError("should have been a cache hit")),
+        )
+        response = client.post(
+            "/strategy",
+            json={"circuit_id": "bahrain", "era": "2018-2021 aero", "race_length": 20, "n_scenarios": 200, "seed": 0},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["expected_cost_seconds"] == 12.3

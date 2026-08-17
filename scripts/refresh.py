@@ -12,6 +12,7 @@ from scripts import (
     fit_field_interaction_model,
     fit_hazard_model,
     run_evaluation,
+    warm_cache,
 )
 
 PROCESSED_DIR = Path("data/processed")
@@ -62,6 +63,10 @@ def refresh(processed_dir: Path = PROCESSED_DIR, seasons: list[int] | None = Non
     print("running the evaluation pass...")
     report = run_evaluation.run(processed_dir)
     report.to_csv(processed_dir / run_evaluation.REPORT_FILENAME, index=False)
+
+    print("warming the solve/compare cache for every circuit at its default race length...")
+    warm = warm_cache.build(processed_dir)
+    warm_cache.write(warm, processed_dir)
 
     print("refresh complete.")
 

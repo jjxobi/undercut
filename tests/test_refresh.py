@@ -30,18 +30,28 @@ def test_refresh_calls_every_stage_in_order(tmp_path, monkeypatch):
         calls.append(("run_evaluation", processed_dir))
         return pd.DataFrame({"a": [1]})
 
+    def fake_warm_build(processed_dir):
+        calls.append(("warm_build", processed_dir))
+        return {"strategy": {}, "compare": {}}
+
+    def fake_warm_write(warm, processed_dir):
+        calls.append(("warm_write", processed_dir))
+
     monkeypatch.setattr(refresh.build_dataset, "build", fake_build)
     monkeypatch.setattr(refresh.build_dataset, "merge_and_write_tables", fake_merge_and_write_tables)
     monkeypatch.setattr(refresh.fit_degradation_model, "run", fake_fit_degradation)
     monkeypatch.setattr(refresh.fit_hazard_model, "run", fake_fit_hazard)
     monkeypatch.setattr(refresh.fit_field_interaction_model, "run", fake_fit_field_interaction)
     monkeypatch.setattr(refresh.run_evaluation, "run", fake_run_evaluation)
+    monkeypatch.setattr(refresh.warm_cache, "build", fake_warm_build)
+    monkeypatch.setattr(refresh.warm_cache, "write", fake_warm_write)
 
     refresh.refresh(processed_dir=tmp_path, seasons=[2024, 2025])
 
     stages = [call[0] for call in calls]
     assert stages == [
         "build", "write_tables", "fit_degradation", "fit_hazard", "fit_field_interaction", "run_evaluation",
+        "warm_build", "warm_write",
     ]
     assert calls[0][1] == [2024, 2025]
     assert calls[0][2] is True  # bypasses the jolpica cache to pick up new results
@@ -71,6 +81,8 @@ def test_refresh_defaults_to_just_the_current_season(tmp_path, monkeypatch):
     monkeypatch.setattr(refresh.fit_hazard_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
     monkeypatch.setattr(refresh.fit_field_interaction_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
     monkeypatch.setattr(refresh.run_evaluation, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+    monkeypatch.setattr(refresh.warm_cache, "build", lambda processed_dir: {"strategy": {}, "compare": {}})
+    monkeypatch.setattr(refresh.warm_cache, "write", lambda warm, processed_dir: None)
 
     refresh.refresh(processed_dir=tmp_path)
 
@@ -122,6 +134,8 @@ def test_refresh_proceeds_when_laps_coverage_is_healthy(tmp_path, monkeypatch):
     monkeypatch.setattr(refresh.fit_hazard_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
     monkeypatch.setattr(refresh.fit_field_interaction_model, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
     monkeypatch.setattr(refresh.run_evaluation, "run", lambda processed_dir: pd.DataFrame({"a": [1]}))
+    monkeypatch.setattr(refresh.warm_cache, "build", lambda processed_dir: {"strategy": {}, "compare": {}})
+    monkeypatch.setattr(refresh.warm_cache, "write", lambda warm, processed_dir: None)
 
     refresh.refresh(processed_dir=tmp_path, seasons=[2026])
 
