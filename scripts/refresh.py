@@ -15,10 +15,11 @@ from scripts import (
 PROCESSED_DIR = Path("data/processed")
 
 
-def refresh(processed_dir: Path = PROCESSED_DIR, seasons: list[int] = config.SEASONS) -> None:
-    print(f"pulling {seasons[0]}-{seasons[-1]}...")
+def refresh(processed_dir: Path = PROCESSED_DIR, seasons: list[int] | None = None) -> None:
+    seasons = seasons if seasons is not None else [config.LAST_CONFIRMED_SEASON]
+    print(f"pulling season(s) {seasons}...")
     tables = build_dataset.build(seasons, refresh=True)
-    build_dataset.write_tables(tables, processed_dir)
+    build_dataset.merge_and_write_tables(tables, seasons, processed_dir)
 
     print("fitting degradation model...")
     degradation_coefficients = fit_degradation_model.run(processed_dir)
@@ -42,7 +43,10 @@ def refresh(processed_dir: Path = PROCESSED_DIR, seasons: list[int] = config.SEA
 def main() -> None:
     parser = argparse.ArgumentParser(description="Re-pull data and re-fit every model in one pass")
     parser.add_argument("--processed-dir", type=Path, default=PROCESSED_DIR)
-    parser.add_argument("--seasons", type=int, nargs="*", default=config.SEASONS)
+    parser.add_argument(
+        "--seasons", type=int, nargs="*", default=None,
+        help="seasons to re-fetch and merge in (default: just the current season)",
+    )
     args = parser.parse_args()
     refresh(args.processed_dir, args.seasons)
 

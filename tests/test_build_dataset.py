@@ -160,3 +160,24 @@ def test_write_tables_writes_parquet_files(tmp_path, monkeypatch):
     assert (tmp_path / "schedule.parquet").exists()
     round_trip = pd.read_parquet(tmp_path / "results.parquet")
     assert round_trip.iloc[0]["Driver"] == "max_verstappen"
+
+
+def test_merge_and_write_tables_replaces_only_the_given_seasons(tmp_path):
+    existing = pd.DataFrame({"Season": [2024, 2025], "Round": [1, 1], "Value": ["old-2024", "old-2025"]})
+    existing.to_parquet(tmp_path / "laps.parquet", index=False)
+
+    fresh = {"laps": pd.DataFrame({"Season": [2025], "Round": [1], "Value": ["new-2025"]})}
+    build_dataset.merge_and_write_tables(fresh, seasons=[2025], out_dir=tmp_path)
+
+    result = pd.read_parquet(tmp_path / "laps.parquet")
+    assert set(result["Season"]) == {2024, 2025}
+    assert result.loc[result["Season"] == 2025, "Value"].tolist() == ["new-2025"]
+    assert result.loc[result["Season"] == 2024, "Value"].tolist() == ["old-2024"]
+
+
+def test_merge_and_write_tables_writes_fresh_when_no_existing_file(tmp_path):
+    fresh = {"laps": pd.DataFrame({"Season": [2026], "Round": [1], "Value": ["new-2026"]})}
+    build_dataset.merge_and_write_tables(fresh, seasons=[2026], out_dir=tmp_path)
+
+    result = pd.read_parquet(tmp_path / "laps.parquet")
+    assert result["Value"].tolist() == ["new-2026"]

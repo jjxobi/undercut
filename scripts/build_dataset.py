@@ -82,6 +82,22 @@ def write_tables(tables: dict[str, pd.DataFrame], out_dir: Path = PROCESSED_DIR)
         frame.to_parquet(out_dir / f"{name}.parquet", index=False)
 
 
+def merge_and_write_tables(
+    tables: dict[str, pd.DataFrame], seasons: list[int], out_dir: Path = PROCESSED_DIR
+) -> None:
+    """Replace the given seasons' rows in the on-disk tables, leaving every other season untouched."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for name, fresh_frame in tables.items():
+        existing_path = out_dir / f"{name}.parquet"
+        if existing_path.exists():
+            existing = pd.read_parquet(existing_path)
+            existing = existing[~existing["Season"].isin(seasons)]
+            merged = pd.concat([existing, fresh_frame], ignore_index=True)
+        else:
+            merged = fresh_frame
+        merged.to_parquet(existing_path, index=False)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build the processed Undercut dataset from FastF1 + Jolpica-F1"
