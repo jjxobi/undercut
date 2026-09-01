@@ -14,15 +14,6 @@ jobs:
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
-      - name: get iso week
-        id: date
-        run: echo "week=$(date +%GW%V)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
-        with:
-          path: data/raw/fastf1_cache/
-          key: fastf1-cache-${{ steps.date.outputs.week }}
-          restore-keys: |
-            fastf1-cache-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
